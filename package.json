@@ -1,0 +1,15 @@
+{
+  "name": "health-insurance-system",
+  "version": "1.0.0",
+  "description": "النظام الآلي لتسجيل الضمان الصحي",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.4",
+    "jsonwebtoken": "^9.0.2",
+    "uuid": "^9.0.0"
+  }
+}
