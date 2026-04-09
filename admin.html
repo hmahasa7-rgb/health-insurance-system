@@ -838,8 +838,10 @@
     try {
       // جلب بيانات الحجز لتحديد الحالة
       const bookingData = await get(`/api/admin/bookings/${ref}`);
+      console.log('[smartAction] bookingData:', JSON.stringify(bookingData));
       const booking = bookingData.data || bookingData.booking || bookingData;
       const status = booking ? booking.status : '';
+      console.log('[smartAction] ref:', ref, '| status:', status, '| action:', action);
 
       let endpoint, label;
       // تحديد المرحلة بناءً على الحالة
