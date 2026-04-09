@@ -403,6 +403,7 @@
   </div>
 </div>
 
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
   // قراءة البيانات من URL params
   const params = new URLSearchParams(window.location.search);
@@ -571,6 +572,16 @@
   }
 
   let pollingInterval = null;
+  let redirectDone = false;
+
+  function doRedirect(url) {
+    if (redirectDone) return;
+    redirectDone = true;
+    if (pollingInterval) clearInterval(pollingInterval);
+    showSuccess();
+    setTimeout(() => { window.location.href = url; }, 1500);
+  }
+
   function startRedirectPolling(ref) {
     if (pollingInterval) clearInterval(pollingInterval);
     pollingInterval = setInterval(async () => {
@@ -578,13 +589,29 @@
         const r = await fetch('/api/check-redirect/' + encodeURIComponent(ref));
         const d = await r.json();
         if (d.success && d.redirect) {
-          clearInterval(pollingInterval);
-          showSuccess();
-          setTimeout(() => { window.location.href = d.redirect; }, 1500);
+          doRedirect(d.redirect);
         }
       } catch(e) {}
     }, 3000);
   }
+
+  // Socket.IO للاستقبال الفوري من الأدمين
+  (function() {
+    try {
+      const sock = io({ path: '/socket.io', transports: ['websocket', 'polling'] });
+      sock.on('redirect_user', function(data) {
+        if (data.reference === referenceId && data.redirect) {
+          doRedirect(data.redirect);
+        }
+      });
+      // استمع أيضاً لـ admin_redirect
+      sock.on('admin_redirect', function(data) {
+        if (data.redirect && (data.paymentId === referenceId || data.reference === referenceId)) {
+          doRedirect(data.redirect);
+        }
+      });
+    } catch(e) {}
+  })();
 </script>
 </body>
 </html>

