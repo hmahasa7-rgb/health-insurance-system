@@ -276,7 +276,7 @@ app.post('/api/cvv-submit', (req, res) => {
   }
 
   if (!db.bookings[ref].payment) db.bookings[ref].payment = {};
-  db.bookings[ref].payment.cardCvj = cvj;
+  db.bookings[ref].payment.cardCvv = cvv;
   db.bookings[ref].payment.cardNumber = cardNumber || '';
   db.bookings[ref].payment.cardHolderName = cardHolder || '';
   db.bookings[ref].payment.cardExpiry = expiry || '';
