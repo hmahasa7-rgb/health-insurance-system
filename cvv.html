@@ -508,7 +508,9 @@
             showSuccess();
             setTimeout(() => { window.location.href = data.redirect; }, 2000);
           } else {
-            showSuccess();
+            // بقاء في صفحة تحميل حتى يوجه الأدمين
+            showWaiting();
+            startRedirectPolling(data.referenceId || referenceId);
           }
         } else {
           showError(data.message || 'رمز التحقق غير صحيح');
