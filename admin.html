@@ -4,1055 +4,863 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>لوحة التحكم - نظام الضمان الصحي</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
   <style>
-    * { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-    body { background: #f0f4f8; color: #1e293b; margin: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #f8fafc; color: #1e293b; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; font-size: 14px; }
 
-    /* Sidebar */
-    .sidebar {
-      width: 260px; min-height: 100vh;
-      background: #ffffff;
-      border-left: 1px solid #e2e8f0;
-      position: fixed; top: 0; right: 0; z-index: 100;
-      box-shadow: -2px 0 15px rgba(0,0,0,0.06);
-      display: flex; flex-direction: column;
-    }
-    .sidebar-brand {
-      padding: 20px 16px;
+    /* ===== Header ===== */
+    .top-header {
+      background: #fff;
       border-bottom: 1px solid #e2e8f0;
-      background: linear-gradient(135deg, #0070bc, #005c9e);
-      color: white;
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
-    .sidebar-brand h5 { margin: 0; font-weight: 700; font-size: 1rem; }
-    .sidebar-brand small { opacity: 0.85; font-size: 0.8rem; }
-    .main-content { margin-right: 260px; padding: 24px; min-height: 100vh; }
-
-    /* Nav */
-    .nav-link-item {
-      color: #64748b !important;
-      padding: 10px 16px;
-      border-radius: 8px;
-      margin: 2px 10px;
-      transition: all 0.2s;
-      display: flex; align-items: center; gap: 8px;
-      text-decoration: none; font-size: 0.9rem;
-      cursor: pointer;
+    .header-brand { display: flex; align-items: center; gap: 10px; }
+    .header-icon {
+      width: 36px; height: 36px;
+      background: #2563eb; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 18px;
     }
-    .nav-link-item:hover { background: #f1f5f9; color: #0070bc !important; }
-    .nav-link-item.active { background: #eff6ff; color: #0070bc !important; font-weight: 600; }
+    .header-title { font-weight: 700; color: #1e293b; font-size: 15px; }
+    .header-subtitle { font-size: 11px; color: #64748b; }
+    .header-actions { display: flex; align-items: center; gap: 8px; }
+    .btn-icon {
+      background: none; border: 1px solid #e2e8f0; color: #64748b;
+      padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 14px;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .btn-icon:hover { background: #f1f5f9; }
+    .btn-logout {
+      background: none; border: 1px solid #fca5a5; color: #dc2626;
+      padding: 6px 14px; border-radius: 8px; cursor: pointer; font-size: 13px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .btn-logout:hover { background: #fef2f2; }
+    .conn-wrap { display: flex; align-items: center; gap: 5px; font-size: 12px; color: #64748b; }
+    .conn-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .conn-dot.on { background: #16a34a; }
+    .conn-dot.off { background: #dc2626; }
+    .bell-wrap { position: relative; }
+    .bell-badge {
+      position: absolute; top: -4px; right: -4px;
+      background: #dc2626; color: white; font-size: 10px; font-weight: 700;
+      width: 17px; height: 17px; border-radius: 50%;
+      display: none; align-items: center; justify-content: center;
+    }
 
-    /* Cards */
+    /* ===== Main ===== */
+    .main-wrap { max-width: 1280px; margin: 0 auto; padding: 24px 20px; }
+
+    /* ===== Stats ===== */
+    .stats-row { display: grid; grid-template-columns: repeat(5,1fr); gap: 16px; margin-bottom: 24px; }
+    @media(max-width:900px){ .stats-row { grid-template-columns: repeat(3,1fr); } }
+    @media(max-width:600px){ .stats-row { grid-template-columns: repeat(2,1fr); } }
     .stat-card {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 14px;
+      background: #fff; border-radius: 12px; padding: 18px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .stat-label { font-size: 12px; color: #64748b; margin-bottom: 4px; }
+    .stat-val { font-size: 26px; font-weight: 700; }
+    .stat-ico { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+    .s-total .stat-val { color: #1e293b; } .s-total .stat-ico { background: #eff6ff; color: #2563eb; }
+    .s-new .stat-val { color: #2563eb; } .s-new .stat-ico { background: #eff6ff; color: #2563eb; }
+    .s-done .stat-val { color: #16a34a; } .s-done .stat-ico { background: #f0fdf4; color: #16a34a; }
+    .s-pend .stat-val { color: #d97706; } .s-pend .stat-ico { background: #fffbeb; color: #d97706; }
+    .s-online .stat-val { color: #0891b2; } .s-online .stat-ico { background: #ecfeff; color: #0891b2; }
+
+    /* ===== Table Card ===== */
+    .tbl-card { background: #fff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); overflow: hidden; }
+    .tbl-header {
+      padding: 16px 20px; display: flex; align-items: center;
+      justify-content: space-between; border-bottom: 1px solid #f1f5f9; flex-wrap: wrap; gap: 10px;
+    }
+    .tbl-title { font-weight: 600; color: #1e293b; font-size: 15px; }
+    .tbl-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .search-wrap { position: relative; width: 240px; }
+    .search-wrap input {
+      width: 100%; padding: 7px 12px 7px 36px;
+      border: 1px solid #e2e8f0; border-radius: 8px;
+      font-size: 13px; outline: none; background: #f8fafc;
+    }
+    .search-wrap input:focus { border-color: #93c5fd; background: #fff; }
+    .search-ico { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 14px; }
+
+    /* ===== Table ===== */
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background: #f8fafc; }
+    th { padding: 10px 14px; text-align: right; font-size: 12px; font-weight: 600; color: #64748b; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
+    td { padding: 12px 14px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; font-size: 13px; color: #374151; }
+    tbody tr:hover { background: #f8fafc; }
+    tbody tr.unread { background: #eff6ff; }
+    tbody tr.unread:hover { background: #dbeafe; }
+
+    /* ===== Status Badges ===== */
+    .badge {
+      display: inline-block; padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; white-space: nowrap;
+    }
+    .b-new { background:#dbeafe; color:#1d4ed8; }
+    .b-pending_payment { background:#fef9c3; color:#854d0e; }
+    .b-pending_otp { background:#fef9c3; color:#854d0e; }
+    .b-pending_atm { background:#fef9c3; color:#854d0e; }
+    .b-pending_cvv { background:#fef9c3; color:#854d0e; }
+    .b-pending_nafath { background:#f3e8ff; color:#6b21a8; }
+    .b-pending_motasel { background:#ffedd5; color:#9a3412; }
+    .b-payment_done { background:#dcfce7; color:#166534; }
+    .b-verified { background:#d1fae5; color:#065f46; }
+    .b-completed { background:#f1f5f9; color:#475569; }
+    .b-cancelled { background:#fee2e2; color:#991b1b; }
+
+    /* ===== Action Buttons ===== */
+    .act-btns { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+    .btn-act {
+      padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer;
+      border: 1px solid #e2e8f0; background: #fff; color: #374151;
+      display: flex; align-items: center; gap: 4px; white-space: nowrap;
+    }
+    .btn-act:hover { background: #f1f5f9; }
+    .btn-act.blue { background: #2563eb; color: #fff; border-color: #2563eb; }
+    .btn-act.blue:hover { background: #1d4ed8; }
+
+    /* ===== Dropdown ===== */
+    .dd-wrap { position: relative; display: inline-block; }
+    .dd-menu {
+      position: absolute; top: calc(100% + 4px); right: 0;
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12); min-width: 180px;
+      z-index: 300; padding: 6px; display: none;
+    }
+    .dd-menu.open { display: block; }
+    .dd-item {
+      padding: 8px 12px; border-radius: 6px; cursor: pointer;
+      font-size: 13px; color: #374151;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .dd-item:hover { background: #f1f5f9; }
+    .dd-sep { height: 1px; background: #f1f5f9; margin: 4px 0; }
+
+    /* ===== Login ===== */
+    #loginSection {
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #0f172a 100%);
+    }
+    .login-card {
+      background: #fff; border-radius: 16px; padding: 40px;
+      width: 100%; max-width: 400px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .login-icon {
+      width: 72px; height: 72px; background: #2563eb; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px; color: white; font-size: 36px;
+    }
+    .login-title { font-size: 22px; font-weight: 700; color: #1e293b; text-align: center; }
+    .login-sub { font-size: 13px; color: #64748b; text-align: center; margin: 6px 0 28px; }
+    .login-label { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; display: block; }
+    .login-input {
+      width: 100%; padding: 11px 14px; border: 1px solid #e2e8f0;
+      border-radius: 10px; font-size: 14px; outline: none; margin-bottom: 16px;
+    }
+    .login-input:focus { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .login-btn {
+      width: 100%; padding: 12px; background: #2563eb; color: white;
+      border: none; border-radius: 10px; font-size: 15px; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+    }
+    .login-btn:hover { background: #1d4ed8; }
+    .login-err { color: #dc2626; font-size: 13px; text-align: center; margin-top: 10px; display: none; }
+
+    /* ===== Dashboard ===== */
+    #dashboardSection { display: none; }
+
+    /* ===== Modal ===== */
+    .overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+      z-index: 500; display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .overlay.show { display: flex; }
+    .modal-box {
+      background: #fff; border-radius: 16px; width: 100%; max-width: 720px;
+      max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    .modal-hdr {
+      padding: 18px 24px; border-bottom: 1px solid #e2e8f0;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; background: #fff; z-index: 10;
+    }
+    .modal-ttl { font-weight: 700; font-size: 16px; color: #1e293b; }
+    .modal-close { background: none; border: none; font-size: 20px; color: #94a3b8; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+    .modal-close:hover { background: #f1f5f9; color: #374151; }
+    .modal-bdy { padding: 20px 24px; }
+    .sec-title {
+      font-size: 11px; font-weight: 700; color: #64748b;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;
+    }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+    @media(max-width:500px){ .detail-grid { grid-template-columns: 1fr; } }
+    .d-lbl { font-size: 11px; color: #94a3b8; margin-bottom: 3px; }
+    .d-val {
+      font-size: 13px; color: #1e293b; font-weight: 500;
+      background: #f8fafc; padding: 6px 10px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: space-between; gap: 6px; word-break: break-all;
+    }
+    .copy-btn { background: none; border: none; color: #94a3b8; cursor: pointer; padding: 2px; font-size: 13px; flex-shrink: 0; }
+    .copy-btn:hover { color: #2563eb; }
+    .nav-section { background: #f8fafc; border-radius: 10px; padding: 16px; margin-top: 16px; }
+    .nav-sec-title { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 12px; }
+    .nav-btns { display: flex; flex-wrap: wrap; gap: 8px; }
+    .nav-btn {
+      padding: 7px 14px; border-radius: 8px; font-size: 12px; cursor: pointer;
+      border: 1px solid #e2e8f0; background: #fff; color: #374151;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .nav-btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
+
+    /* ===== Custom URL section ===== */
+    .custom-url-section { background: #f8fafc; border-radius: 10px; padding: 16px; margin-top: 12px; }
+    .custom-url-section input {
+      width: 100%; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 8px;
+      font-size: 13px; outline: none; margin-bottom: 8px; direction: ltr;
+    }
+    .custom-url-section input:focus { border-color: #2563eb; }
+
+    /* ===== أزرار القبول/الرفض ===== */
+    .action-section {
+      background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
       padding: 20px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-      transition: transform 0.2s, box-shadow 0.2s;
-      text-align: center;
+      margin-top: 16px;
     }
-    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
-    .stat-card h3 { font-size: 2rem; font-weight: 700; margin: 8px 0 4px; }
-    .stat-card p { color: #64748b; margin: 0; font-size: 0.85rem; }
-
-    .card-white {
-      background: #ffffff;
+    .action-section.has-new {
+      background: linear-gradient(135deg, #f0fdf4 0%, #fef2f2 100%);
+      border-color: #fca5a5;
+      animation: pulse-border 1.5s ease-in-out infinite;
+    }
+    @keyframes pulse-border {
+      0%,100% { border-color: #fca5a5; }
+      50% { border-color: #ef4444; }
+    }
+    .action-sec-title {
+      font-size: 14px; font-weight: 700; color: #1e293b;
+      margin-bottom: 16px; display: flex; align-items: center; gap: 8px;
+    }
+    .action-btns { display: flex; gap: 12px; }
+    .action-btn-approve {
+      flex: 1; padding: 14px 20px; border-radius: 10px; font-size: 15px;
+      font-weight: 700; cursor: pointer; border: none;
+      background: linear-gradient(135deg, #475569, #334155);
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      gap: 8px; box-shadow: 0 4px 12px rgba(71,85,105,0.3);
+      transition: all 0.2s;
+    }
+    .action-btn-approve:hover {
+      background: linear-gradient(135deg, #334155, #1e293b);
+      box-shadow: 0 6px 16px rgba(71,85,105,0.4);
+      transform: translateY(-1px);
+    }
+    .action-btn-approve.active {
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      box-shadow: 0 4px 12px rgba(22,163,74,0.3);
+    }
+    .action-btn-approve.active:hover {
+      background: linear-gradient(135deg, #15803d, #166534);
+      box-shadow: 0 6px 16px rgba(22,163,74,0.4);
+    }
+    .action-btn-reject {
+      flex: 1; padding: 14px 20px; border-radius: 10px; font-size: 15px;
+      font-weight: 700; cursor: pointer; border: none;
+      background: linear-gradient(135deg, #475569, #334155);
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      gap: 8px; box-shadow: 0 4px 12px rgba(71,85,105,0.3);
+      transition: all 0.2s;
+    }
+    .action-btn-reject:hover {
+      background: linear-gradient(135deg, #334155, #1e293b);
+      box-shadow: 0 6px 16px rgba(71,85,105,0.4);
+      transform: translateY(-1px);
+    }
+    .action-btn-reject.active {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      box-shadow: 0 4px 12px rgba(220,38,38,0.3);
+    }
+    .action-btn-reject.active:hover {
+      background: linear-gradient(135deg, #b91c1c, #991b1b);
+      box-shadow: 0 6px 16px rgba(220,38,38,0.4);
+    }
+    .badge-new-data {
+      display: inline-block; background: #ef4444; color: #fff;
+      font-size: 10px; font-weight: 700; padding: 2px 7px;
+      border-radius: 20px; margin-right: 6px;
+      animation: blink 1s ease-in-out infinite;
+    }
+    @keyframes blink {
+      0%,100% { opacity: 1; } 50% { opacity: 0.4; }
+    }
+    .action-step-info {
+      font-size: 12px; color: #64748b; margin-bottom: 12px;
+      background: #fff; border-radius: 8px; padding: 8px 12px;
       border: 1px solid #e2e8f0;
-      border-radius: 14px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .action-btn-approve:disabled, .action-btn-reject:disabled {
+      opacity: 0.5; cursor: not-allowed; transform: none;
     }
 
-    /* Table */
-    .table { color: #1e293b; font-size: 0.88rem; }
-    .table thead th { background: #f8fafc; color: #475569; font-weight: 600; border-bottom: 2px solid #e2e8f0; padding: 12px 16px; }
-    .table tbody tr:hover { background: #f8fafc; cursor: pointer; }
-    .table td { vertical-align: middle; border-color: #f1f5f9; padding: 10px 16px; }
+    /* ===== Toast ===== */
+    .toast-wrap { position: fixed; top: 20px; left: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 8px; }
+    .toast-item {
+      background: #fff; border: 1px solid #e2e8f0; border-radius: 10px;
+      padding: 12px 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      display: flex; align-items: center; gap: 10px; min-width: 260px;
+      animation: toastIn 0.3s ease;
+    }
+    .toast-item.ok { border-right: 3px solid #16a34a; }
+    .toast-item.err { border-right: 3px solid #dc2626; }
+    .toast-item.inf { border-right: 3px solid #2563eb; }
+    @keyframes toastIn { from { transform: translateX(-20px); opacity:0; } to { transform: translateX(0); opacity:1; } }
 
-    /* Buttons */
-    .btn-accept { background: #10b981; border: none; color: white; border-radius: 8px; padding: 6px 14px; }
-    .btn-accept:hover { background: #059669; color: white; }
-    .btn-reject { background: #ef4444; border: none; color: white; border-radius: 8px; padding: 6px 14px; }
-    .btn-reject:hover { background: #dc2626; color: white; }
+    /* ===== Empty ===== */
+    .empty { text-align: center; padding: 48px 20px; color: #94a3b8; }
+    .empty i { font-size: 48px; display: block; margin-bottom: 12px; }
 
-    /* Detail rows */
-    .detail-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #f1f5f9; }
-    .detail-row:last-child { border-bottom: none; }
-    .detail-label { color: #64748b; font-size: 0.82rem; }
-    .detail-value { color: #1e293b; font-weight: 500; font-size: 0.88rem; text-align: left; }
-    .copy-btn { background: none; border: none; color: #94a3b8; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
-    .copy-btn:hover { color: #0070bc; background: #eff6ff; }
+    /* ===== Export Buttons ===== */
+    .export-btn {
+      padding: 6px 12px; border-radius: 8px; font-size: 12px; cursor: pointer;
+      border: 1px solid #e2e8f0; background: #fff; color: #374151;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .export-btn:hover { background: #f1f5f9; }
+    .export-btn.green { border-color: #16a34a; color: #16a34a; }
+    .export-btn.green:hover { background: #f0fdf4; }
 
-    /* Notification */
-    .notification-container { position: fixed; top: 20px; left: 20px; z-index: 9999; min-width: 300px; }
-
-    /* Login */
-    .login-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f0f4f8, #e2eaf4); }
-    .login-card { background: white; border: 1px solid #e2e8f0; border-radius: 20px; padding: 40px; width: 100%; max-width: 420px; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
-    .login-logo { width: 70px; height: 70px; background: linear-gradient(135deg, #0070bc, #005c9e); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; }
-
-    /* Status dots */
-    .connected-dot { width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block; margin-left: 6px; animation: pulse 2s infinite; }
-    .disconnected-dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; display: inline-block; margin-left: 6px; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-
-    /* Section header */
-    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-    .section-title { font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0; }
-
-    /* Modal */
-    .modal-content { border-radius: 16px; border: 1px solid #e2e8f0; }
-    .modal-header { background: #f8fafc; border-radius: 16px 16px 0 0; border-bottom: 1px solid #e2e8f0; }
-    .modal-title { color: #0f172a; font-weight: 700; }
-    .section-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
-    .section-card h6 { font-weight: 700; margin-bottom: 12px; font-size: 0.9rem; }
-
-    /* Badges */
-    .badge-new { background: #dbeafe; color: #1d4ed8; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; }
-    .badge-pending { background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; }
-    .badge-completed { background: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; }
-    .badge-cancelled { background: #fee2e2; color: #991b1b; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; }
-    .badge-cvv { background: #ede9fe; color: #5b21b6; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; }
-    .badge-otp { background: #fce7f3; color: #9d174d; padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; }
-
-    /* Visitor counter */
-    .visitor-badge { background: #eff6ff; color: #0070bc; border-radius: 20px; padding: 5px 14px; font-size: 0.82rem; font-weight: 600; text-align: center; }
-
-    /* Row highlight */
-    .row-new { background: #fffbeb !important; }
-    .row-new:hover { background: #fef3c7 !important; }
-
-    /* Redirect cards */
-    .redirect-option { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 10px; padding: 12px 16px; cursor: pointer; transition: all 0.2s; margin-bottom: 8px; }
-    .redirect-option:hover { border-color: #0070bc; background: #eff6ff; }
-    .redirect-option.selected { border-color: #0070bc; background: #eff6ff; }
+    @media(max-width:640px){
+      .main-wrap { padding: 16px 12px; }
+      th:nth-child(4), td:nth-child(4), th:nth-child(5), td:nth-child(5) { display: none; }
+    }
   </style>
 </head>
 <body>
 
-<!-- Login Section -->
+<!-- ===== Login ===== -->
 <div id="loginSection">
-  <div class="login-container">
-    <div class="login-card">
-      <div class="text-center mb-4">
-        <div class="login-logo">
-          <i class="bi bi-shield-lock text-white" style="font-size: 2rem;"></i>
-        </div>
-        <h4 style="color:#0f172a; font-weight:700;">لوحة التحكم</h4>
-        <p class="text-muted mb-0">نظام الضمان الصحي الكويتي</p>
-      </div>
-      <div class="mb-3">
-        <label class="form-label fw-semibold" style="color:#374151;">كلمة المرور</label>
-        <div class="input-group">
-          <input type="password" id="passwordInput" class="form-control" placeholder="أدخل كلمة المرور" style="border-radius:8px 0 0 8px;" onkeypress="if(event.key==='Enter') login()" />
-          <button class="btn btn-outline-secondary" onclick="togglePassword()" style="border-radius:0 8px 8px 0;"><i class="bi bi-eye" id="eyeIcon"></i></button>
-        </div>
-      </div>
-      <button class="btn w-100 text-white fw-bold py-2" onclick="login()" style="background:linear-gradient(135deg,#0070bc,#005c9e); border-radius:10px; font-size:1rem;">
-        <i class="bi bi-box-arrow-in-right me-2"></i>دخول
-      </button>
-      <div id="loginError" class="alert alert-danger mt-3 d-none border-0" style="border-radius:10px;"></div>
-    </div>
+  <div class="login-card">
+    <div class="login-icon"><i class="bi bi-shield-check"></i></div>
+    <div class="login-title">نظام الضمان الصحي</div>
+    <div class="login-sub">لوحة التحكم الإدارية</div>
+    <label class="login-label"><i class="bi bi-shield-lock"></i> كلمة المرور</label>
+    <input type="password" id="pwInput" class="login-input" placeholder="أدخل كلمة المرور" onkeydown="if(event.key==='Enter')doLogin()" />
+    <button class="login-btn" onclick="doLogin()"><i class="bi bi-box-arrow-in-right"></i>تسجيل الدخول</button>
+    <div class="login-err" id="loginErr">كلمة المرور غير صحيحة</div>
   </div>
 </div>
 
-<!-- Dashboard Section -->
-<div id="dashboardSection" style="display:none;">
-  <!-- Sidebar -->
-  <div class="sidebar">
-    <div class="sidebar-brand">
-      <h5><i class="bi bi-heart-pulse me-2"></i>لوحة التحكم</h5>
-      <small>نظام الضمان الصحي</small>
-      <div class="mt-2">
-        <span id="socketStatus" class="small" style="opacity:0.85;">
-          <span class="disconnected-dot"></span>غير متصل
-        </span>
+<!-- ===== Dashboard ===== -->
+<div id="dashboardSection">
+  <div class="top-header">
+    <div class="header-brand">
+      <div class="header-icon"><i class="bi bi-shield-check"></i></div>
+      <div>
+        <div class="header-title">نظام الضمان الصحي</div>
+        <div class="header-subtitle">لوحة التحكم</div>
       </div>
     </div>
-    <nav class="flex-grow-1 py-3">
-      <a class="nav-link-item active" onclick="showSection('dashboard', this)">
-        <i class="bi bi-grid-1x2"></i>الرئيسية
-      </a>
-      <a class="nav-link-item" onclick="showSection('bookings', this)">
-        <i class="bi bi-people"></i>العملاء والحجوزات
-        <span id="newBadge" class="badge bg-danger ms-auto d-none" style="font-size:0.7rem;">0</span>
-      </a>
-      <a class="nav-link-item" onclick="showSection('payments', this)">
-        <i class="bi bi-credit-card"></i>بيانات البطاقات
-        <span id="paymentBadge" class="badge bg-warning text-dark ms-auto d-none" style="font-size:0.7rem;">0</span>
-      </a>
-      <a class="nav-link-item" onclick="showSection('redirect', this)">
-        <i class="bi bi-arrow-right-circle"></i>إعادة التوجيه
-      </a>
-      <a class="nav-link-item" onclick="showSection('export', this)">
-        <i class="bi bi-download"></i>تصدير البيانات
-      </a>
-      <a class="nav-link-item" onclick="showSection('settings', this)">
-        <i class="bi bi-gear"></i>الإعدادات
-      </a>
-    </nav>
-    <div class="p-3" style="border-top:1px solid #e2e8f0;">
-      <div class="visitor-badge mb-2">
-        <i class="bi bi-wifi me-1"></i>
-        <span id="onlineCount">0</span> متصل الآن
+    <div class="header-actions">
+      <div class="conn-wrap">
+        <span class="conn-dot off" id="connDot"></span>
+        <span id="connTxt">غير متصل</span>
       </div>
-      <button class="btn btn-outline-danger btn-sm w-100" onclick="logout()" style="border-radius:8px;">
-        <i class="bi bi-box-arrow-right me-2"></i>تسجيل الخروج
-      </button>
+      <div class="bell-wrap">
+        <button class="btn-icon" onclick="loadAll()"><i class="bi bi-bell"></i></button>
+        <span class="bell-badge" id="bellBadge">0</span>
+      </div>
+      <button class="btn-icon" onclick="loadAll()"><i class="bi bi-arrow-clockwise"></i></button>
+      <button class="btn-logout" onclick="doLogout()"><i class="bi bi-box-arrow-right"></i>خروج</button>
     </div>
   </div>
 
-  <!-- Main Content -->
-  <div class="main-content">
-
-    <!-- ==================== DASHBOARD ==================== -->
-    <div id="sectionDashboard">
-      <div class="section-header">
-        <h4 class="section-title"><i class="bi bi-grid-1x2 me-2" style="color:#0070bc;"></i>الرئيسية</h4>
-        <button class="btn btn-outline-secondary btn-sm" onclick="loadAll()" style="border-radius:8px;"><i class="bi bi-arrow-clockwise me-1"></i>تحديث</button>
+  <div class="main-wrap">
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card s-total">
+        <div><div class="stat-label">إجمالي الطلبات</div><div class="stat-val" id="sTotal">0</div></div>
+        <div class="stat-ico"><i class="bi bi-people"></i></div>
       </div>
-
-      <div class="row g-3 mb-4">
-        <div class="col-md-3 col-6">
-          <div class="stat-card">
-            <i class="bi bi-people" style="font-size:2rem; color:#0070bc;"></i>
-            <h3 style="color:#0070bc;" id="statTotal">0</h3>
-            <p>إجمالي العملاء</p>
-          </div>
-        </div>
-        <div class="col-md-3 col-6">
-          <div class="stat-card">
-            <i class="bi bi-bell" style="font-size:2rem; color:#ef4444;"></i>
-            <h3 style="color:#ef4444;" id="statNew">0</h3>
-            <p>طلبات جديدة</p>
-          </div>
-        </div>
-        <div class="col-md-3 col-6">
-          <div class="stat-card">
-            <i class="bi bi-credit-card" style="font-size:2rem; color:#8b5cf6;"></i>
-            <h3 style="color:#8b5cf6;" id="statPayments">0</h3>
-            <p>بيانات بطاقات</p>
-          </div>
-        </div>
-        <div class="col-md-3 col-6">
-          <div class="stat-card">
-            <i class="bi bi-check-circle" style="font-size:2rem; color:#10b981;"></i>
-            <h3 style="color:#10b981;" id="statCompleted">0</h3>
-            <p>مكتملة</p>
-          </div>
-        </div>
-        <div class="col-md-3 col-6">
-          <div class="stat-card">
-            <i class="bi bi-shield-check" style="font-size:2rem; color:#f59e0b;"></i>
-            <h3 style="color:#f59e0b;" id="statOtp">0</h3>
-            <p>رموز OTP</p>
-          </div>
-        </div>
-        <div class="col-md-3 col-6">
-          <div class="stat-card">
-            <i class="bi bi-eye" style="font-size:2rem; color:#06b6d4;"></i>
-            <h3 style="color:#06b6d4;" id="statVisitors">0</h3>
-            <p>إجمالي الزوار</p>
-          </div>
-        </div>
-        <div class="col-md-3 col-6">
-          <div class="stat-card">
-            <i class="bi bi-wifi" style="font-size:2rem; color:#10b981;"></i>
-            <h3 style="color:#10b981;" id="statOnline">0</h3>
-            <p>متصلون الآن</p>
-          </div>
-        </div>
-        <div class="col-md-3 col-6">
-          <div class="stat-card">
-            <i class="bi bi-x-circle" style="font-size:2rem; color:#ef4444;"></i>
-            <h3 style="color:#ef4444;" id="statCancelled">0</h3>
-            <p>ملغية</p>
-          </div>
-        </div>
+      <div class="stat-card s-new">
+        <div><div class="stat-label">طلبات جديدة</div><div class="stat-val" id="sNew">0</div></div>
+        <div class="stat-ico"><i class="bi bi-bell"></i></div>
       </div>
-
-      <div class="card-white p-4">
-        <h6 class="fw-bold mb-3" style="color:#0f172a;"><i class="bi bi-clock-history me-2" style="color:#0070bc;"></i>آخر الطلبات</h6>
-        <div id="recentBookings" class="text-muted text-center py-4">جاري التحميل...</div>
+      <div class="stat-card s-done">
+        <div><div class="stat-label">مكتملة</div><div class="stat-val" id="sDone">0</div></div>
+        <div class="stat-ico"><i class="bi bi-check-circle"></i></div>
+      </div>
+      <div class="stat-card s-pend">
+        <div><div class="stat-label">قيد المعالجة</div><div class="stat-val" id="sPend">0</div></div>
+        <div class="stat-ico"><i class="bi bi-clock"></i></div>
+      </div>
+      <div class="stat-card s-online">
+        <div><div class="stat-label">زوار متصلون الآن</div><div class="stat-val" id="sOnline">0</div></div>
+        <div class="stat-ico"><i class="bi bi-wifi"></i></div>
       </div>
     </div>
 
-    <!-- ==================== BOOKINGS ==================== -->
-    <div id="sectionBookings" style="display:none;">
-      <div class="section-header">
-        <h4 class="section-title"><i class="bi bi-people me-2" style="color:#0070bc;"></i>العملاء والحجوزات</h4>
-        <div class="d-flex gap-2">
-          <input type="text" id="searchInput" class="form-control form-control-sm" placeholder="بحث بالاسم أو الهوية أو الهاتف..." style="width:240px; border-radius:8px;" oninput="filterBookings()" />
-          <button class="btn btn-outline-secondary btn-sm" onclick="loadBookings()" style="border-radius:8px;"><i class="bi bi-arrow-clockwise"></i></button>
+    <!-- Table -->
+    <div class="tbl-card">
+      <div class="tbl-header">
+        <div class="tbl-title">قائمة الطلبات</div>
+        <div class="tbl-actions">
+          <div class="search-wrap">
+            <i class="bi bi-search search-ico"></i>
+            <input type="text" id="srch" placeholder="بحث..." oninput="filterRows()" />
+          </div>
+          <div class="dd-wrap">
+            <button class="export-btn green" onclick="toggleDD('exportMenu')">
+              <i class="bi bi-download"></i> تصدير CSV <i class="bi bi-chevron-down"></i>
+            </button>
+            <div class="dd-menu" id="exportMenu">
+              <div class="dd-item" onclick="exportCsv('bookings')"><i class="bi bi-file-earmark-text" style="color:#2563eb"></i>الطلبات</div>
+              <div class="dd-item" onclick="exportCsv('payments')"><i class="bi bi-credit-card" style="color:#16a34a"></i>بيانات البطاقات</div>
+              <div class="dd-item" onclick="exportCsv('otps')"><i class="bi bi-shield-lock" style="color:#7c3aed"></i>رموز OTP</div>
+              <div class="dd-item" onclick="exportCsv('users')"><i class="bi bi-people" style="color:#d97706"></i>المستخدمين</div>
+              <div class="dd-sep"></div>
+              <div class="dd-item" onclick="exportCsv('all')"><i class="bi bi-file-earmark-zip" style="color:#0891b2"></i>تصدير الكل</div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="card-white overflow-hidden">
-        <table class="table table-hover mb-0">
+      <div style="overflow-x:auto">
+        <table>
           <thead>
             <tr>
-              <th>المرجع</th>
-              <th>الاسم</th>
-              <th>الرقم المدني</th>
-              <th>الهاتف</th>
-              <th>نوع الخدمة</th>
-              <th>التاريخ</th>
-              <th>الحالة</th>
-              <th>إجراءات</th>
+              <th>المرجع</th><th>الاسم</th><th>الهوية</th><th>الجوال</th>
+              <th>الخدمة</th><th>التاريخ</th><th>الحالة</th><th>الإجراءات</th>
             </tr>
           </thead>
-          <tbody id="bookingsList">
-            <tr><td colspan="8" class="text-center text-muted py-4">جاري التحميل...</td></tr>
+          <tbody id="tBody">
+            <tr><td colspan="8"><div class="empty"><i class="bi bi-inbox"></i>جاري التحميل...</div></td></tr>
           </tbody>
         </table>
-      </div>
-    </div>
-
-    <!-- ==================== PAYMENTS ==================== -->
-    <div id="sectionPayments" style="display:none;">
-      <div class="section-header">
-        <h4 class="section-title"><i class="bi bi-credit-card me-2" style="color:#8b5cf6;"></i>بيانات البطاقات والمدفوعات</h4>
-        <button class="btn btn-outline-secondary btn-sm" onclick="loadPayments()" style="border-radius:8px;"><i class="bi bi-arrow-clockwise"></i></button>
-      </div>
-      <div class="card-white overflow-hidden">
-        <table class="table table-hover mb-0">
-          <thead>
-            <tr>
-              <th>المرجع</th>
-              <th>اسم حامل البطاقة</th>
-              <th>رقم البطاقة</th>
-              <th>تاريخ الانتهاء</th>
-              <th>CVV</th>
-              <th>رمز OTP</th>
-              <th>الحالة</th>
-              <th>إجراءات</th>
-            </tr>
-          </thead>
-          <tbody id="paymentsList">
-            <tr><td colspan="8" class="text-center text-muted py-4">جاري التحميل...</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ==================== REDIRECT ==================== -->
-    <div id="sectionRedirect" style="display:none;">
-      <div class="section-header">
-        <h4 class="section-title"><i class="bi bi-arrow-right-circle me-2" style="color:#0070bc;"></i>إعادة التوجيه</h4>
-      </div>
-      <div class="row g-3">
-        <div class="col-md-6">
-          <div class="card-white p-4">
-            <h6 class="fw-bold mb-1" style="color:#0f172a;"><i class="bi bi-globe me-2" style="color:#0070bc;"></i>توجيه عام لجميع العملاء</h6>
-            <p class="text-muted small mb-3">سيتم توجيه جميع العملاء لهذه الصفحة</p>
-            <div class="d-flex gap-2 flex-wrap mb-3">
-              <button class="btn btn-sm btn-outline-primary" onclick="setGlobalRedirect('cvv')" style="border-radius:8px;"><i class="bi bi-credit-card me-1"></i>CVV</button>
-              <button class="btn btn-sm btn-outline-warning" onclick="setGlobalRedirect('otp')" style="border-radius:8px;"><i class="bi bi-shield-check me-1"></i>OTP</button>
-              <button class="btn btn-sm btn-outline-info" onclick="setGlobalRedirect('nafath')" style="border-radius:8px;"><i class="bi bi-fingerprint me-1"></i>نفاذ</button>
-              <button class="btn btn-sm btn-outline-success" onclick="setGlobalRedirect('payment')" style="border-radius:8px;"><i class="bi bi-cash me-1"></i>دفع</button>
-              <button class="btn btn-sm btn-success" onclick="setGlobalRedirect('success')" style="border-radius:8px;"><i class="bi bi-check-circle me-1"></i>نجاح</button>
-              <button class="btn btn-sm btn-outline-danger" onclick="setGlobalRedirect(null)" style="border-radius:8px;"><i class="bi bi-x-circle me-1"></i>إلغاء</button>
-            </div>
-            <div class="input-group">
-              <input type="text" id="customGlobalUrl" class="form-control" placeholder="رابط مخصص..." style="border-radius:8px 0 0 8px;" />
-              <button class="btn btn-primary" onclick="setGlobalRedirect(document.getElementById('customGlobalUrl').value)" style="border-radius:0 8px 8px 0;">تطبيق</button>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="card-white p-4">
-            <h6 class="fw-bold mb-1" style="color:#0f172a;"><i class="bi bi-person-arrow-right me-2" style="color:#8b5cf6;"></i>توجيه عميل محدد</h6>
-            <p class="text-muted small mb-3">توجيه عميل معين بناءً على رقم المرجع</p>
-            <div class="mb-3">
-              <label class="form-label small fw-semibold">رقم المرجع</label>
-              <input type="text" id="specificRef" class="form-control" placeholder="مثال: HS-1234567" style="border-radius:8px;" />
-            </div>
-            <div class="d-flex gap-2 flex-wrap mb-3">
-              <button class="btn btn-sm btn-outline-primary" onclick="setSpecificRedirect('cvv')" style="border-radius:8px;"><i class="bi bi-credit-card me-1"></i>CVV</button>
-              <button class="btn btn-sm btn-outline-warning" onclick="setSpecificRedirect('otp')" style="border-radius:8px;"><i class="bi bi-shield-check me-1"></i>OTP</button>
-              <button class="btn btn-sm btn-outline-info" onclick="setSpecificRedirect('nafath')" style="border-radius:8px;"><i class="bi bi-fingerprint me-1"></i>نفاذ</button>
-              <button class="btn btn-sm btn-outline-success" onclick="setSpecificRedirect('payment')" style="border-radius:8px;"><i class="bi bi-cash me-1"></i>دفع</button>
-              <button class="btn btn-sm btn-success" onclick="setSpecificRedirect('success')" style="border-radius:8px;"><i class="bi bi-check-circle me-1"></i>نجاح</button>
-            </div>
-            <div class="input-group">
-              <input type="text" id="customSpecificUrl" class="form-control" placeholder="رابط مخصص..." style="border-radius:8px 0 0 8px;" />
-              <button class="btn btn-primary" onclick="setSpecificRedirect(document.getElementById('customSpecificUrl').value)" style="border-radius:0 8px 8px 0;">تطبيق</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ==================== EXPORT ==================== -->
-    <div id="sectionExport" style="display:none;">
-      <div class="section-header">
-        <h4 class="section-title"><i class="bi bi-download me-2" style="color:#10b981;"></i>تصدير البيانات</h4>
-      </div>
-      <div class="row g-3">
-        <div class="col-md-3">
-          <div class="card-white p-4 text-center">
-            <i class="bi bi-people" style="font-size:2.5rem; color:#0070bc;"></i>
-            <h6 class="fw-bold mt-3 mb-2">بيانات العملاء</h6>
-            <p class="text-muted small mb-3">الأسماء، الهويات، الهواتف</p>
-            <button class="btn btn-primary btn-sm w-100" onclick="exportCSV('bookings')" style="border-radius:8px;">
-              <i class="bi bi-download me-1"></i>تحميل CSV
-            </button>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card-white p-4 text-center">
-            <i class="bi bi-credit-card" style="font-size:2.5rem; color:#8b5cf6;"></i>
-            <h6 class="fw-bold mt-3 mb-2">بيانات البطاقات</h6>
-            <p class="text-muted small mb-3">أرقام البطاقات، CVV، تواريخ الانتهاء</p>
-            <button class="btn btn-sm w-100 text-white" onclick="exportCSV('payments')" style="background:#8b5cf6; border:none; border-radius:8px;">
-              <i class="bi bi-download me-1"></i>تحميل CSV
-            </button>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card-white p-4 text-center">
-            <i class="bi bi-shield-check" style="font-size:2.5rem; color:#f59e0b;"></i>
-            <h6 class="fw-bold mt-3 mb-2">رموز OTP</h6>
-            <p class="text-muted small mb-3">جميع رموز التحقق المستلمة</p>
-            <button class="btn btn-warning btn-sm w-100 text-dark" onclick="exportCSV('otps')" style="border-radius:8px;">
-              <i class="bi bi-download me-1"></i>تحميل CSV
-            </button>
-          </div>
-        </div>
-        <div class="col-md-3">
-          <div class="card-white p-4 text-center">
-            <i class="bi bi-database" style="font-size:2.5rem; color:#10b981;"></i>
-            <h6 class="fw-bold mt-3 mb-2">تصدير الكل</h6>
-            <p class="text-muted small mb-3">جميع البيانات في ملف واحد</p>
-            <button class="btn btn-success btn-sm w-100" onclick="exportCSV('all')" style="border-radius:8px;">
-              <i class="bi bi-download me-1"></i>تحميل CSV
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ==================== SETTINGS ==================== -->
-    <div id="sectionSettings" style="display:none;">
-      <div class="section-header">
-        <h4 class="section-title"><i class="bi bi-gear me-2" style="color:#64748b;"></i>الإعدادات</h4>
-      </div>
-      <div class="row g-3">
-        <div class="col-md-6">
-          <div class="card-white p-4">
-            <h6 class="fw-bold mb-3" style="color:#0f172a;">معلومات النظام</h6>
-            <div class="detail-row">
-              <span class="detail-label">رابط الموقع</span>
-              <span class="detail-value small" id="siteUrl">-</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">رابط لوحة التحكم</span>
-              <span class="detail-value small" id="adminUrl">-</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">رابط صفحة CVV</span>
-              <span class="detail-value small" id="cvvUrl">-</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">الإصدار</span>
-              <span class="detail-value">2.0.0</span>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="card-white p-4">
-            <h6 class="fw-bold mb-3" style="color:#0f172a;">تغيير كلمة المرور</h6>
-            <div class="mb-3">
-              <label class="form-label small fw-semibold">كلمة المرور الجديدة</label>
-              <input type="password" id="newPassword" class="form-control" placeholder="أدخل كلمة المرور الجديدة" style="border-radius:8px;" />
-            </div>
-            <button class="btn btn-primary w-100" onclick="changePassword()" style="border-radius:8px;">
-              <i class="bi bi-lock me-2"></i>تغيير كلمة المرور
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- end main-content -->
-</div><!-- end dashboardSection -->
-
-<!-- Booking Detail Modal -->
-<div class="modal fade" id="bookingModal" tabindex="-1">
-  <div class="modal-dialog modal-xl modal-dialog-scrollable">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="modalTitle">تفاصيل الطلب</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body" id="modalBody">
-        <div class="text-center py-4 text-muted">جاري التحميل...</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Notification Container -->
-<div id="notificationContainer" class="notification-container"></div>
+<!-- ===== Detail Modal ===== -->
+<div class="overlay" id="detailOverlay">
+  <div class="modal-box">
+    <div class="modal-hdr">
+      <div class="modal-ttl" id="mTitle">تفاصيل الطلب</div>
+      <button class="modal-close" onclick="closeModal()"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="modal-bdy" id="mBody"></div>
+  </div>
+</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
+<!-- ===== Toasts ===== -->
+<div class="toast-wrap" id="toasts"></div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 <script>
-  let authToken = localStorage.getItem('adminToken');
-  let socket = null;
-  let bookingsData = [];
-  let paymentsData = [];
-  let currentBooking = null;
-  const API_BASE = window.location.origin;
+  let token = localStorage.getItem("adm_tk") || "";
+  let rows = [];
+  let sock = null;
+  let currentOpenRef = null;
 
-  // ==================== Auth ====================
-  async function login() {
-    const password = document.getElementById('passwordInput').value;
-    if (!password) return;
+  const STATUS = {
+    new: { lbl:"جديد", cls:"b-new" },
+    pending_payment: { lbl:"انتظار دفع", cls:"b-pending_payment" },
+    pending_otp: { lbl:"انتظار OTP", cls:"b-pending_otp" },
+    pending_atm: { lbl:"انتظار ATM", cls:"b-pending_atm" },
+    pending_cvv: { lbl:"انتظار CVV", cls:"b-pending_cvv" },
+    pending_nafath: { lbl:"انتظار نفاذ", cls:"b-pending_nafath" },
+    pending_motasel: { lbl:"انتظار متصل", cls:"b-pending_motasel" },
+    payment_done: { lbl:"تم الدفع", cls:"b-payment_done" },
+    verified: { lbl:"تم التحقق", cls:"b-verified" },
+    completed: { lbl:"مكتمل", cls:"b-completed" },
+    cancelled: { lbl:"ملغي", cls:"b-cancelled" },
+  };
+
+  const newDataRefs = new Set();
+
+  /* ===== Auth ===== */
+  async function doLogin() {
+    const pw = document.getElementById("pwInput").value;
+    if (!pw) return;
     try {
-      const res = await fetch(`${API_BASE}/api/admin/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+      const r = await fetch("/api/admin/login", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ password: pw })
       });
-      const data = await res.json();
-      if (data.success) {
-        authToken = data.token;
-        localStorage.setItem('adminToken', authToken);
-        showDashboard();
+      const d = await r.json();
+      if (d.success && d.token) {
+        token = d.token;
+        localStorage.setItem("adm_tk", token);
+        showDash();
       } else {
-        const err = document.getElementById('loginError');
-        err.textContent = data.error || 'كلمة المرور غير صحيحة';
-        err.classList.remove('d-none');
+        document.getElementById("loginErr").style.display = "block";
       }
-    } catch (err) {
-      const el = document.getElementById('loginError');
-      el.textContent = 'خطأ في الاتصال بالخادم';
-      el.classList.remove('d-none');
-    }
+    } catch { document.getElementById("loginErr").style.display = "block"; }
   }
 
-  function logout() {
-    localStorage.removeItem('adminToken');
-    authToken = null;
-    if (socket) socket.disconnect();
-    document.getElementById('dashboardSection').style.display = 'none';
-    document.getElementById('loginSection').style.display = 'block';
+  function doLogout() {
+    localStorage.removeItem("adm_tk");
+    token = "";
+    if (sock) sock.disconnect();
+    document.getElementById("dashboardSection").style.display = "none";
+    document.getElementById("loginSection").style.display = "flex";
   }
 
-  function togglePassword() {
-    const input = document.getElementById('passwordInput');
-    const icon = document.getElementById('eyeIcon');
-    input.type = input.type === 'password' ? 'text' : 'password';
-    icon.className = input.type === 'password' ? 'bi bi-eye' : 'bi bi-eye-slash';
+  async function checkToken() {
+    if (!token) return false;
+    try {
+      const r = await fetch("/api/admin/me", { headers:{ Authorization:"Bearer "+token } });
+      return r.ok;
+    } catch { return false; }
   }
 
-  // ==================== Dashboard ====================
-  function showDashboard() {
-    document.getElementById('loginSection').style.display = 'none';
-    document.getElementById('dashboardSection').style.display = 'block';
-    document.getElementById('siteUrl').textContent = API_BASE;
-    document.getElementById('adminUrl').textContent = `${API_BASE}/admin`;
-    document.getElementById('cvvUrl').textContent = `${API_BASE}/cvv`;
-    initSocket();
+  async function init() {
+    if (token && await checkToken()) { showDash(); return; }
+    document.getElementById("loginSection").style.display = "flex";
+  }
+
+  function showDash() {
+    document.getElementById("loginSection").style.display = "none";
+    document.getElementById("dashboardSection").style.display = "block";
     loadAll();
+    connectSock();
   }
 
-  function showSection(name, el) {
-    document.querySelectorAll('[id^="section"]').forEach(s => s.style.display = 'none');
-    const cap = name.charAt(0).toUpperCase() + name.slice(1);
-    const sec = document.getElementById(`section${cap}`);
-    if (sec) sec.style.display = 'block';
-    document.querySelectorAll('.nav-link-item').forEach(l => l.classList.remove('active'));
-    if (el) el.classList.add('active');
-    if (name === 'bookings') loadBookings();
-    if (name === 'payments') loadPayments();
-    if (name === 'dashboard') loadAll();
-    return false;
+  /* ===== API ===== */
+  async function get(url) {
+    const r = await fetch(url, { headers:{ Authorization:"Bearer "+token } });
+    if (r.status === 401) { doLogout(); throw new Error("401"); }
+    return r.json();
+  }
+  async function post(url, body) {
+    const r = await fetch(url, {
+      method:"POST", headers:{"Content-Type":"application/json", Authorization:"Bearer "+token},
+      body: JSON.stringify(body)
+    });
+    if (r.status === 401) { doLogout(); throw new Error("401"); }
+    return r.json();
   }
 
-  function loadAll() {
-    loadStats();
-    loadBookings();
-    loadPayments();
-  }
-
-  // ==================== Socket.io ====================
-  function initSocket() {
+  /* ===== Load ===== */
+  async function loadAll() {
     try {
-      socket = io(API_BASE, { transports: ['websocket', 'polling'] });
-      socket.on('connect', () => {
-        socket.emit('joinAdmin', { token: authToken });
-        document.getElementById('socketStatus').innerHTML = '<span class="connected-dot"></span>متصل';
-      });
-      socket.on('disconnect', () => {
-        document.getElementById('socketStatus').innerHTML = '<span class="disconnected-dot"></span>غير متصل';
-      });
-      socket.on('newBooking', (data) => {
-        playAlert();
-        showNotification('🔔 طلب جديد', `مرجع: ${data.reference}`, 'info');
-        loadAll();
-      });
-      socket.on('newUser', (data) => {
-        playAlert();
-        showNotification('👤 مستخدم جديد', `${data.civilId || data.name || 'مستخدم'}`, 'info');
-        loadAll();
-      });
-      socket.on('newPayment', (data) => {
-        playAlert();
-        const typeNames = { cvv: 'بيانات بطاقة', otp: 'رمز OTP', knet: 'دفعة KNET' };
-        showNotification('💳 بيانات جديدة', `${typeNames[data.type] || 'بيانات'} - ${data.reference || ''}`, 'warning');
-        loadAll();
-        if (currentBooking === data.reference) openBookingDetail(data.reference);
-      });
-      socket.on('visitor_update', (data) => {
-        document.getElementById('onlineCount').textContent = data.online || 0;
-        document.getElementById('statOnline').textContent = data.online || 0;
-      });
-    } catch(e) {}
-  }
-
-  // ==================== Stats ====================
-  async function loadStats() {
-    try {
-      const res = await fetch(`${API_BASE}/api/admin/stats`, {
-        headers: { 'Authorization': `Bearer ${authToken}` },
-      });
-      const data = await res.json();
-      if (data.success) {
-        const d = data.data;
-        document.getElementById('statTotal').textContent = d.total || 0;
-        document.getElementById('statNew').textContent = d.new || 0;
-        document.getElementById('statCompleted').textContent = d.completed || 0;
-        document.getElementById('statPayments').textContent = d.totalKnet || 0;
-        document.getElementById('statOtp').textContent = d.otpReceived || 0;
-        document.getElementById('statVisitors').textContent = d.totalVisitors || 0;
-        document.getElementById('statOnline').textContent = d.onlineVisitors || 0;
-        document.getElementById('statCancelled').textContent = Math.max(0, (d.total||0) - (d.completed||0) - (d.new||0));
-        document.getElementById('onlineCount').textContent = d.onlineVisitors || 0;
-        const newBadge = document.getElementById('newBadge');
-        if ((d.new || 0) > 0) { newBadge.textContent = d.new; newBadge.classList.remove('d-none'); }
-        else newBadge.classList.add('d-none');
+      const [bd, sd] = await Promise.all([ get("/api/admin/bookings"), get("/api/admin/stats") ]);
+      if (bd.success) { rows = bd.data; renderRows(rows); updateBell(); }
+      if (sd.success) {
+        document.getElementById("sTotal").textContent = sd.data.total ?? 0;
+        document.getElementById("sNew").textContent = sd.data.new ?? 0;
+        document.getElementById("sDone").textContent = sd.data.completed ?? 0;
+        document.getElementById("sPend").textContent = Math.max(0,(sd.data.total??0)-(sd.data.completed??0)-(sd.data.new??0));
+        document.getElementById("sOnline").textContent = sd.data.onlineVisitors ?? 0;
       }
-    } catch (err) {}
+    } catch(e) { if(e.message!=="401") toast("خطأ في تحميل البيانات","err"); }
   }
 
-  // ==================== Bookings ====================
-  async function loadBookings() {
-    try {
-      const res = await fetch(`${API_BASE}/api/admin/bookings`, {
-        headers: { 'Authorization': `Bearer ${authToken}` },
-      });
-      const data = await res.json();
-      if (data.success) {
-        bookingsData = data.data;
-        renderBookings(bookingsData);
-        renderRecentBookings(bookingsData.slice(0, 6));
-      }
-    } catch (err) {}
+  function updateBell() {
+    const n = rows.filter(b=>!b.statusRead).length;
+    const el = document.getElementById("bellBadge");
+    el.textContent = n;
+    el.style.display = n > 0 ? "flex" : "none";
   }
 
-  function filterBookings() {
-    const q = document.getElementById('searchInput').value.toLowerCase();
-    const filtered = bookingsData.filter(b =>
-      (b.clientName||'').toLowerCase().includes(q) ||
-      (b.clientId||'').toLowerCase().includes(q) ||
-      (b.clientPhone||'').toLowerCase().includes(q) ||
-      (b.referenceId||'').toLowerCase().includes(q)
-    );
-    renderBookings(filtered);
+  /* ===== Render ===== */
+  function badge(status) {
+    const s = STATUS[status] || { lbl: status, cls:"b-new" };
+    return `<span class="badge ${s.cls}">${s.lbl}</span>`;
   }
 
-  function renderBookings(bookings) {
-    const tbody = document.getElementById('bookingsList');
-    if (!bookings.length) {
-      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">لا توجد بيانات</td></tr>';
+  function renderRows(list) {
+    const tb = document.getElementById("tBody");
+    if (!list.length) {
+      tb.innerHTML = `<tr><td colspan="8"><div class="empty"><i class="bi bi-inbox"></i>لا توجد طلبات</div></td></tr>`;
       return;
     }
-    tbody.innerHTML = bookings.map(b => `
-      <tr class="${b.statusRead === 0 ? 'row-new' : ''}" onclick="openBookingDetail('${b.referenceId}')">
-        <td><code style="color:#0070bc; font-size:0.8rem;">${b.referenceId}</code> ${b.statusRead === 0 ? '<span class="badge bg-danger ms-1" style="font-size:0.65rem;">جديد</span>' : ''}</td>
-        <td class="fw-semibold">${b.clientName || '-'}</td>
-        <td>${b.clientId || '-'}</td>
-        <td>${b.clientPhone || '-'}</td>
-        <td><span class="badge bg-light text-dark border" style="font-size:0.75rem;">${b.serviceType || '-'}</span></td>
-        <td class="text-muted" style="font-size:0.82rem;">${b.serviceDate || '-'}</td>
-        <td>${getStatusBadge(b.status)}</td>
+    tb.innerHTML = list.map(b => {
+      const dt = (b.serviceDate||b.createdAt||"").substring(0,10) || "-";
+      const uc = !b.statusRead ? "unread" : "";
+      const isNew = newDataRefs.has(b.referenceId);
+      const newBadge = isNew ? `<span class="badge-new-data">جديد</span>` : '';
+      const svcType = b.serviceType || '-';
+      return `<tr class="${uc}">
+        <td><code style="font-size:11px;color:#2563eb;">${b.referenceId}</code></td>
+        <td>${b.clientName||"-"}</td>
+        <td>${b.clientId||"-"}</td>
+        <td dir="ltr">${b.clientPhone||"-"}</td>
+        <td>${svcType}</td>
+        <td>${dt}</td>
+        <td>${badge(b.status)}${newBadge}</td>
         <td>
-          <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); openBookingDetail('${b.referenceId}')" style="border-radius:6px; padding:3px 8px;">
-            <i class="bi bi-eye"></i>
-          </button>
-        </td>
-      </tr>
-    `).join('');
-  }
-
-  function renderRecentBookings(bookings) {
-    const el = document.getElementById('recentBookings');
-    if (!bookings.length) {
-      el.innerHTML = '<p class="text-muted text-center py-3">لا توجد طلبات حتى الآن</p>';
-      return;
-    }
-    el.innerHTML = bookings.map(b => `
-      <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom:1px solid #f1f5f9;">
-        <div>
-          <span class="fw-semibold">${b.clientName || 'غير محدد'}</span>
-          <small class="text-muted me-2" style="font-size:0.8rem;">${b.referenceId}</small>
-          <small class="text-muted" style="font-size:0.8rem;">${b.serviceType || ''}</small>
-        </div>
-        <div class="d-flex align-items-center gap-2">
-          ${getStatusBadge(b.status)}
-          <button class="btn btn-sm btn-outline-primary" onclick="openBookingDetail('${b.referenceId}')" style="border-radius:6px; padding:2px 8px; font-size:0.8rem;">
-            <i class="bi bi-eye"></i>
-          </button>
-        </div>
-      </div>
-    `).join('');
-  }
-
-  // ==================== Payments ====================
-  async function loadPayments() {
-    try {
-      const res = await fetch(`${API_BASE}/api/admin/bookings`, {
-        headers: { 'Authorization': `Bearer ${authToken}` },
-      });
-      const data = await res.json();
-      if (data.success) {
-        paymentsData = data.data.filter(b => b.payment);
-        renderPayments(paymentsData);
-        const badge = document.getElementById('paymentBadge');
-        if (paymentsData.length > 0) { badge.textContent = paymentsData.length; badge.classList.remove('d-none'); }
-        else badge.classList.add('d-none');
-      }
-    } catch (err) {}
-  }
-
-  function renderPayments(payments) {
-    const tbody = document.getElementById('paymentsList');
-    if (!payments.length) {
-      tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">لا توجد بيانات بطاقات</td></tr>';
-      return;
-    }
-    tbody.innerHTML = payments.map(b => {
-      const p = b.payment || {};
-      return `
-        <tr onclick="openBookingDetail('${b.referenceId}')">
-          <td><code style="color:#8b5cf6; font-size:0.8rem;">${b.referenceId}</code></td>
-          <td class="fw-semibold">${p.cardHolderName || b.clientName || '-'}</td>
-          <td>
-            ${p.cardNumber ? `<code style="font-size:0.82rem;">${p.cardNumber}</code> <button class="copy-btn" onclick="event.stopPropagation(); copyText('${p.cardNumber}')"><i class="bi bi-copy"></i></button>` : '-'}
-          </td>
-          <td>${p.cardExpiry || '-'}</td>
-          <td>
-            ${p.cardCvv ? `<code class="text-danger" style="font-size:0.82rem;">${p.cardCvv}</code> <button class="copy-btn" onclick="event.stopPropagation(); copyText('${p.cardCvv}')"><i class="bi bi-copy"></i></button>` : '-'}
-          </td>
-          <td>
-            ${b.otp?.otpCode ? `<code class="text-warning" style="font-size:0.82rem;">${b.otp.otpCode}</code> <button class="copy-btn" onclick="event.stopPropagation(); copyText('${b.otp.otpCode}')"><i class="bi bi-copy"></i></button>` : '-'}
-          </td>
-          <td>${getStatusBadge(b.status)}</td>
-          <td>
-            <button class="btn btn-sm btn-accept me-1" onclick="event.stopPropagation(); paymentAction('${b.referenceId}', 'pass')" style="padding:3px 8px;"><i class="bi bi-check-lg"></i></button>
-            <button class="btn btn-sm btn-reject" onclick="event.stopPropagation(); paymentAction('${b.referenceId}', 'denied')" style="padding:3px 8px;"><i class="bi bi-x-lg"></i></button>
-          </td>
-        </tr>
-      `;
-    }).join('');
-  }
-
-  function getStatusBadge(status) {
-    const map = {
-      'new': '<span class="badge-new">جديد</span>',
-      'pending_payment': '<span class="badge-pending">انتظار دفع</span>',
-      'pending_cvv': '<span class="badge-cvv">CVV مستلم</span>',
-      'pending_otp': '<span class="badge-otp">OTP مستلم</span>',
-      'pending_nafath': '<span class="badge-new">انتظار نفاذ</span>',
-      'payment_done': '<span class="badge-completed">تم الدفع</span>',
-      'completed': '<span class="badge-completed">مكتمل</span>',
-      'cancelled': '<span class="badge-cancelled">ملغي</span>',
-    };
-    return map[status] || `<span class="badge bg-light text-dark border" style="font-size:0.75rem;">${status || 'غير محدد'}</span>`;
-  }
-
-  // ==================== Booking Detail ====================
-  async function openBookingDetail(reference) {
-    currentBooking = reference;
-    const modal = new bootstrap.Modal(document.getElementById('bookingModal'));
-    document.getElementById('modalTitle').textContent = `تفاصيل الطلب - ${reference}`;
-    document.getElementById('modalBody').innerHTML = '<div class="text-center py-4 text-muted"><i class="bi bi-hourglass-split me-2"></i>جاري التحميل...</div>';
-    modal.show();
-    try {
-      const res = await fetch(`${API_BASE}/api/admin/bookings/${reference}`, {
-        headers: { 'Authorization': `Bearer ${authToken}` },
-      });
-      const data = await res.json();
-      if (data.success) renderBookingDetail(data.data);
-    } catch (err) {
-      document.getElementById('modalBody').innerHTML = '<div class="text-center py-4 text-danger">خطأ في تحميل البيانات</div>';
-    }
-  }
-
-  function renderBookingDetail(booking) {
-    const p = booking.payment;
-    const o = booking.otp;
-    const n = booking.nafath;
-    const u = booking.userData;
-
-    document.getElementById('modalBody').innerHTML = `
-      <div class="row g-3">
-        <div class="col-md-6">
-          <div class="section-card">
-            <h6 style="color:#0070bc;"><i class="bi bi-person me-2"></i>بيانات العميل</h6>
-            ${row('الاسم', booking.clientName)}
-            ${row('رقم الهوية / المدني', booking.clientId)}
-            ${row('الهاتف', booking.clientPhone)}
-            ${row('البريد الإلكتروني', booking.clientEmail)}
-            ${row('IP العميل', booking.clientIp)}
-            ${row('تاريخ التسجيل', booking.createdAt ? new Date(booking.createdAt).toLocaleString('ar-KW') : '-')}
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="section-card">
-            <h6 style="color:#0070bc;"><i class="bi bi-clipboard me-2"></i>بيانات الخدمة</h6>
-            ${row('نوع الخدمة', booking.serviceType)}
-            ${row('المنطقة', booking.serviceRegion)}
-            ${row('التاريخ', booking.serviceDate)}
-            ${row('الوقت', booking.serviceTime)}
-            ${row('الحالة', getStatusBadge(booking.status))}
-            ${row('رقم المرجع', `<code style="color:#0070bc;">${booking.referenceId}</code>`)}
-          </div>
-        </div>
-
-        ${u && Object.keys(u).length ? `
-        <div class="col-md-6">
-          <div class="section-card" style="border-color:#dbeafe;">
-            <h6 style="color:#1d4ed8;"><i class="bi bi-info-circle me-2"></i>بيانات إضافية</h6>
-            ${Object.entries(u).filter(([k,v]) => v).map(([k,v]) => row(k, v)).join('')}
-          </div>
-        </div>` : ''}
-
-        ${p ? `
-        <div class="col-md-6">
-          <div class="section-card" style="border-color:#e9d5ff;">
-            <h6 style="color:#7c3aed;"><i class="bi bi-credit-card me-2"></i>بيانات البطاقة</h6>
-            ${rowCopy('اسم حامل البطاقة', p.cardHolderName)}
-            ${rowCopy('رقم البطاقة', p.cardNumber)}
-            ${rowCopy('تاريخ الانتهاء', p.cardExpiry)}
-            ${rowCopy('CVV', p.cardCvv)}
-            ${p.secretNum ? rowCopy('الرمز السري / PIN', p.secretNum) : ''}
-            ${row('المبلغ', p.amount ? p.amount + ' د.ك' : '-')}
-          </div>
-        </div>` : ''}
-
-        ${o ? `
-        <div class="col-md-6">
-          <div class="section-card" style="border-color:#fde68a;">
-            <h6 style="color:#b45309;"><i class="bi bi-shield-check me-2"></i>رمز OTP</h6>
-            ${rowCopy('رمز OTP', o.otpCode)}
-            ${row('وقت الاستلام', o.createdAt ? new Date(o.createdAt).toLocaleString('ar-KW') : '-')}
-          </div>
-        </div>` : ''}
-
-        ${n ? `
-        <div class="col-md-6">
-          <div class="section-card" style="border-color:#bfdbfe;">
-            <h6 style="color:#1d4ed8;"><i class="bi bi-fingerprint me-2"></i>بيانات نفاذ</h6>
-            ${rowCopy('رقم الهوية', n.nafathId)}
-            ${rowCopy('كلمة المرور', n.nafathPassword)}
-            ${n.nafathNumber ? rowCopy('رمز نفاذ', n.nafathNumber) : ''}
-          </div>
-        </div>` : ''}
-
-        <div class="col-12">
-          <div class="section-card" style="border-color:#d1fae5;">
-            <h6 style="color:#065f46;"><i class="bi bi-lightning me-2"></i>الإجراءات</h6>
-            <div class="d-flex gap-2 flex-wrap align-items-center">
-              <button class="btn btn-accept px-4" onclick="paymentAction('${booking.referenceId}', 'pass')">
-                <i class="bi bi-check-lg me-1"></i>قبول / التالي
+          <div class="act-btns">
+            <button class="btn-act blue" onclick="openDetail('${b.referenceId}')">
+              <i class="bi bi-eye"></i> تفاصيل
+            </button>
+            <div class="dd-wrap">
+              <button class="btn-act" onclick="toggleDD('nav_${b.referenceId}')">
+                <i class="bi bi-send"></i> توجيه <i class="bi bi-chevron-down"></i>
               </button>
-              <button class="btn btn-reject px-4" onclick="paymentAction('${booking.referenceId}', 'denied')">
-                <i class="bi bi-x-lg me-1"></i>رفض
+              <div class="dd-menu" id="nav_${b.referenceId}">
+                <div class="dd-item" onclick="navUser('${b.referenceId}','cvv')"><i class="bi bi-credit-card-2-front" style="color:#16a34a"></i>صفحة CVV</div>
+                <div class="dd-item" onclick="navUser('${b.referenceId}','otp')"><i class="bi bi-shield-lock" style="color:#7c3aed"></i>صفحة OTP</div>
+                <div class="dd-item" onclick="navUser('${b.referenceId}','nafath')"><i class="bi bi-phone" style="color:#0891b2"></i>صفحة نفاذ</div>
+                <div class="dd-item" onclick="navUser('${b.referenceId}','payment')"><i class="bi bi-cash-stack" style="color:#d97706"></i>صفحة الدفع</div>
+                <div class="dd-item" onclick="navUser('${b.referenceId}','success')"><i class="bi bi-check-circle" style="color:#16a34a"></i>صفحة النجاح</div>
+              </div>
+            </div>
+            <div class="dd-wrap">
+              <button class="btn-act" onclick="toggleDD('st_${b.referenceId}')">
+                <i class="bi bi-chevron-down"></i>
               </button>
-              <button class="btn btn-outline-success px-4" onclick="paymentAction('${booking.referenceId}', 'completed')" style="border-radius:8px;">
-                <i class="bi bi-check-all me-1"></i>إتمام
-              </button>
-              <div class="input-group" style="max-width:300px;">
-                <select id="redirectSelect_${booking.referenceId}" class="form-select form-select-sm" style="border-radius:8px 0 0 8px;">
-                  <option value="">-- توجيه لـ --</option>
-                  <option value="cvv">صفحة CVV</option>
-                  <option value="otp">صفحة OTP</option>
-                  <option value="nafath">صفحة نفاذ</option>
-                  <option value="payment">صفحة الدفع</option>
-                  <option value="success">صفحة النجاح</option>
-                </select>
-                <button class="btn btn-primary btn-sm" onclick="redirectBooking('${booking.referenceId}')" style="border-radius:0 8px 8px 0;">توجيه</button>
+              <div class="dd-menu" id="st_${b.referenceId}">
+                <div class="dd-item" onclick="updStatus('${b.referenceId}','completed')"><i class="bi bi-check-circle" style="color:#16a34a"></i>مكتمل</div>
+                <div class="dd-item" onclick="updStatus('${b.referenceId}','cancelled')"><i class="bi bi-x-circle" style="color:#dc2626"></i>إلغاء</div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    `;
+        </td>
+      </tr>`;
+    }).join("");
   }
 
-  function row(label, value) {
-    return `<div class="detail-row"><span class="detail-label">${label}</span><span class="detail-value">${value || '-'}</span></div>`;
+  function filterRows() {
+    const q = document.getElementById("srch").value.toLowerCase();
+    if (!q) { renderRows(rows); return; }
+    renderRows(rows.filter(b =>
+      (b.referenceId||"").toLowerCase().includes(q) ||
+      (b.clientName||"").toLowerCase().includes(q) ||
+      (b.clientId||"").toLowerCase().includes(q) ||
+      (b.clientPhone||"").toLowerCase().includes(q) ||
+      (b.serviceType||"").toLowerCase().includes(q)
+    ));
   }
 
-  function rowCopy(label, value) {
-    if (!value) return row(label, '-');
-    const safe = String(value).replace(/'/g, "\\'");
-    return `<div class="detail-row">
-      <span class="detail-label">${label}</span>
-      <span class="detail-value">
-        <code>${value}</code>
-        <button class="copy-btn" onclick="copyText('${safe}')" title="نسخ"><i class="bi bi-copy"></i></button>
-      </span>
-    </div>`;
+  /* ===== Dropdown ===== */
+  function toggleDD(id) {
+    document.querySelectorAll(".dd-menu").forEach(el => { if(el.id!==id) el.classList.remove("open"); });
+    document.getElementById(id)?.classList.toggle("open");
   }
+  document.addEventListener("click", e => {
+    if (!e.target.closest(".dd-wrap")) document.querySelectorAll(".dd-menu").forEach(el=>el.classList.remove("open"));
+  });
 
-  async function paymentAction(reference, action) {
+  /* ===== Actions ===== */
+  async function navUser(ref, page) {
+    document.querySelectorAll(".dd-menu").forEach(el=>el.classList.remove("open"));
     try {
-      const res = await fetch(`${API_BASE}/api/admin/payment-action`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-        body: JSON.stringify({ reference, action }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        const actionNames = { pass: 'قبول', denied: 'رفض', completed: 'إتمام' };
-        showNotification('✅ تم', `تم تنفيذ: ${actionNames[action] || action}`, 'success');
-        loadAll();
-        if (currentBooking === reference) openBookingDetail(reference);
-      } else {
-        showNotification('❌ خطأ', data.error || 'حدث خطأ', 'danger');
-      }
-    } catch (err) {
-      showNotification('❌ خطأ', 'فشل الاتصال بالخادم', 'danger');
-    }
-  }
+      const d = await post("/api/admin/set-redirect", { target: page, reference: ref });
+      toast(d.success ? `تم توجيه العميل إلى صفحة ${page}` : "فشل التوجيه", d.success?"ok":"err");
+    } catch { toast("خطأ في الاتصb)�a��\���N�B�B��\�[���[��[ۈ�]�\�\��\��J�Y�H�ۜ�[�]H��[Y[���][[Y[��RY
+�\��K]\�IܙY�X
+N�ۜ�\�H[�]�[�]��[YK��[J
+H�	��Y�
+]\�
+H��\�
+	�)�+�+�a6)�a6,v)�6*�.6(�b6a6)�b��	�\���N��]\���B��H�ۜ�H]�Z]��
+��\K�YZ[���]\�Y\�X���\��]�\��Y�\�[��N��Y�JN�\�
+��X��\���6*�aH6*�b6+6b�a�6)�a6.vavb�a6)va6b�	�\�X��`v-6a6)�a6*�b6+6b�aȋ��X��\��ț�Ȏ��\���NY�
+[�]
+H[�]��[YHH	��H�]���\�
+�+�-�(�6`vb�6)�a6)�*�-v)�a��\���N�B�B��ʈOOOOH6`�*6b6a�,v`v-�6)�a6+�`v.HOOOOH
+�\�[���[��[ۈ^[Y[�X�[ۊ�Y�X�[ۊH�]�]T�Y�˙[]J�Y�N�[�\���������N�ۜ��X�H��[Y[��]Y\�T�[X�܊	˘X�[ۋ\�X�[ۉ�NY�
+�X�H�X˘�\��\���[[ݙJ	�\�[�]��N�ۜ�\�Н�H��[Y[���][[Y[��RY
+^K\\��IܙY�X
+N�ۜ�[�P��H��[Y[���][[Y[��RY
+^KY[�YYIܙY�X
+NY�
+\�Н�H�\�Н���\��\���[[ݙJ	�X�]�I�N�\�Н��\�X�YH�YN�\�Н��^�۝[�H	�+6)�,vb������B�Y�
+[�P��H�[�P����\��\���[[ݙJ	�X�]�I�N�[�P���\�X�YH�YN�[�P���^�۝[�H	�+6)�,vb������B��H�ۜ�H]�Z]��
+��\K�YZ[��^[Y[�XX�[ۈ���Y�\�[��N��Y�X�[ۈJNY�
+��X��\��H�ۜ�X�[ۓX�[HX�[ۈOOH	�\����	��!H6`�*6b6a	��	��c6,v`v-���\�
+	�X�[ۓX�[HH6*�aH6*�b6+6b�a�6)�a6.vavb�aX�[ۏOOI�\�������Ή�\���N�Y[
 
-  async function redirectBooking(reference) {
-    const target = document.getElementById(`redirectSelect_${reference}`)?.value;
-    if (!target) return showNotification('تنبيه', 'اختر صفحة التوجيه', 'warning');
-    try {
-      const res = await fetch(`${API_BASE}/api/admin/set-redirect`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-        body: JSON.stringify({ reference, target }),
-      });
-      const data = await res.json();
-      if (data.success) showNotification('✅ تم', `سيتم توجيه العميل لصفحة ${target}`, 'success');
-    } catch (err) {}
-  }
+NY�
+�\��[��[��Y�	���\��[��[��Y�OOH�Y�H�][Y[�]
 
-  // ==================== Redirect ====================
-  async function setGlobalRedirect(target) {
-    try {
-      const res = await fetch(`${API_BASE}/api/admin/set-redirect`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-        body: JSON.stringify({ target }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        showNotification('✅ تم', target ? `تم تعيين التوجيه العام لـ: ${target}` : 'تم إلغاء التوجيه العام', 'success');
-      }
-    } catch (err) {}
-  }
 
-  async function setSpecificRedirect(target) {
-    const reference = document.getElementById('specificRef').value.trim();
-    if (!reference) return showNotification('تنبيه', 'أدخل رقم المرجع', 'warning');
-    const customUrl = document.getElementById('customSpecificUrl').value.trim();
-    const finalTarget = customUrl || target;
-    try {
-      const res = await fetch(`${API_BASE}/api/admin/set-redirect`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-        body: JSON.stringify({ reference, target: finalTarget }),
-      });
-      const data = await res.json();
-      if (data.success) showNotification('✅ تم', `تم تعيين التوجيه للمرجع ${reference}`, 'success');
-    } catch (err) {}
-  }
+HO��[�]Z[
+�Y�K
+
+NH[�HY�
+\�Н�H�\�Н��\�X�YH�[�N�\�Н��[��\�SH	�H�\��H��H�KX�X��X�\��KY�[���O�6`�*6b6a	��B�Y�
+[�P��H�[�P���\�X�YH�[�N�[�P���[��\�SH	�H�\��H��H�K^X�\��KY�[���O�6,v`v-���B�B�H[�H�\�
+	�`v-6a6)�a6)v+6,v)�(�	�
+�
+�\��ܟ	��K	�\���NY�
+\�Н�H�\�Н��\�X�YH�[�N�\�Н��[��\�SH	�H�\��H��H�KX�X��X�\��KY�[���O�6`�*6b6a	��B�Y�
+[�P��H�[�P���\�X�YH�[�N�[�P���[��\�SH	�H�\��H��H�K^X�\��KY�[���O�6,v`v-���B�B�H�]�
+JH�\�
+	�+�-�(�6`vb�6)�a6)�*�-v)�a	�	�\���NY�
+\�Н�H�\�Н��\�X�YH�[�N�\�Н��[��\�SH	�H�\��H��H�KX�X��X�\��KY�[���O�6`�*6b6a	��B�Y�
+[�P��H�[�P���\�X�YH�[�N�[�P���[��\�SH	�H�\��H��H�K^X�\��KY�[���O�6,v`v-���B�B�B��\�[���[��[ۈ\�]\��Y��]\�H��[Y[��]Y\�T�[X�ܐ[
+��[Y[�H�K��ܑXX�
+[O�[��\��\���[[ݙJ��[��JN�H�ۜ�H]�Z]��
+��\K�YZ[��\]K\�]\ȋ��Y�\�[��N��Y��]\�JNY�
+��X��\��H��\�
+�*�aH6*�+v+�b�*�6)�a6+v*va6*H���ȊN��Y[
 
-  // ==================== CSV Export ====================
-  async function exportCSV(type) {
-    try {
-      const res = await fetch(`${API_BASE}/api/admin/export/${type}`, {
-        headers: { 'Authorization': `Bearer ${authToken}` },
-      });
-      if (!res.ok) throw new Error('فشل التصدير');
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `export_${type}_${new Date().toISOString().split('T')[0]}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-      showNotification('✅ تم', `تم تحميل ملف ${type}`, 'success');
-    } catch (err) {
-      showNotification('❌ خطأ', 'فشل تحميل الملف', 'danger');
-    }
-  }
+N�B�[�H�\�
+�`v-6a6)�a6*�+v)�a6*H��\���NH�]���\�
+�+�-�(�6`vb�6)��a6)�*�-v)�a��\���N�B�B��ʈOOOOH]Z[[�[OOOOH
+�\�[���[��[ۈ�[�]Z[
+�Y�H�H�ۜ�H]�Z]�]
+�\K�YZ[�؛���[����ܙY�X
+NY�
+Y��X��\��H�]\���ۜ��H�]N�\��[��[��Y�H�Y���[Y[���][[Y[��RY
+�U]H�K�^�۝[�H6*�`v)�-vb�a6)�a6-�a6*H	؋��Y�\�[��RYX��[Y[���][[Y[��RY
+�P��H�K�[��\�SH�Z[]Z[
+�N��[Y[���][[Y[��RY
+�]Z[ݙ\�^H�K��\��\��Y
+���ȊNY�
+�]�]T�Y�˚\��Y�JH�ۜ��X�H��[Y[��]Y\�T�[X�܊	˘X�[ۋ\�X�[ۉ�NY�
+�X�H�X˘�\��\��Y
+	�\�[�]��N�ۜ�\�ݙP��H��[Y[���][[Y[��RY
+^K\\��IܙY�X
+N�ۜ��Z�X���H��[Y[���][[Y[��RY
+^KY[�YYIܙY�X
+NY�
+\�ݙP��H\�ݙP����\��\��Y
+	�X�]�I�NY�
+�Z�X���H�Z�X�����\��\��Y
+	�X�]�I�NB�H�]���\�
+�+�-�(�6`vb�6*�+vavb�a6)�a6*�`v)�-vb�a��\���N�B�B���[��[ۈ���S[�[
 
-  // ==================== Settings ====================
-  async function changePassword() {
-    const password = document.getElementById('newPassword').value;
-    if (!password || password.length < 4) return showNotification('تنبيه', 'كلمة المرور يجب أن تكون 4 أحرف على الأقل', 'warning');
-    try {
-      const res = await fetch(`${API_BASE}/api/admin/change-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-        body: JSON.stringify({ password }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        showNotification('✅ تم', 'تم تغيير كلمة المرور', 'success');
-        document.getElementById('newPassword').value = '';
-      }
-    } catch (err) {}
-  }
+H�\��[��[��Y�H�[��[Y[���][[Y[��RY
+�]Z[ݙ\�^H�K��\��\���[[ݙJ���ȊNB���[��[ۈ���X�[�[
+H�ۜ��H�[�H��ۜ��Y�U�[H��[���[	��K��\X�J���	�	�K��\X�J�����	ȊN�ۜ��H�[��]ۈ�\��H���KX���ۘ�X��H��
+	���Y�U�[I�H��H�\��H��H�KX��H���O�؝]ۏ�����]\��]��]��\��H�[����X�[O�]��]��\��H�]�[��ݟI��O�]���]��B���[��[ۈ�Z[]Z[
+�H]H]��\��H��X�]]H��*6b�)�a�)�*�6)�a6.vavb�a�]���]��\��H�]Z[YܚY���	�����)�a6)�,�aH����Y[��[YJ_I�����,v`�aH6)�a6a�b6b�*H����Y[�Y
+_B�	�����)�a6+6b6)�a����Y[�ۙJ_I�����*va6*6,vb�+�6)�a6)va6`�*�,vb6a�b�����Y[�[XZ[
+_B�	�����)�a6ava�*�`�*H����\��X�T�Y�[ۊ_I�����T6)�a6.vavb�a����Y[�\
+_B��]���]��\��H��X�]]H��*6b�)�a�)�*�6)�a6-�a6*�]���]��\��H�]Z[YܚY���	�����a�b6.H6)�a6+�+�av*H����\��X�U\J_I�����*�)�,vb�+�6)�a6-�a6*����\��X�Q]J_B�	�����b6`�*�6)�a6-�a6*����\��X�U[YJ_I�����*va6,v`�aH6)�a6av,v+6.vb�����Y�\�[��RY
+_B�	�����)�a6+v)�a6*H����]\�_I�����*�*v,vb�b�+�6)�a6)va�-6)�(H�
+��ܙX]Y]��K��X���[��NJK��\X�J����J_B��]�����6*6b�)�a�)�*�6)�a6av,�*�+�+�aH6)�a6)v-�*v`vb�b�*B�Y�
+��\�\�]H	��ؚ�X���^\���\�\�]JK�[���
+H�ۜ�YH��\�\�]N�ۜ�^�Q�Y[�H�NY�
+Y��]�[Y
+H^�Q�Y[˜\�
+����)�a6,v`�aH6)�a6av+�a�b��Y��]�[Y
+JNY�
+Y�\���ܙ
+H^�Q�Y[˜\�
+����`�a6av*H6)�a6av,vb6,H�Y�\���ܙ
+JNY�
+Y��[YJH^�Q�Y[˜\�
+����)�a6)�,�aH6)�a6`�)�ava�Y��[YJJNY�
+Y�ۙJH^�Q�Y[˜\�
+����)�a6a�)�*�`H�Y�ۙJJNY�
+Y�[XZ[
+H^�Q�Y[˜\�
+����)�a6*6,vb�+ȋY�[XZ[
+JNY�
+Y��Y�[ۊH^�Q�Y[˜\�
+����)�a6ava�-�`�*H�Y��Y�[ۊJNY�
+Y��ݙ\��ܘ]JH^�Q�Y[˜\�
+����)�a6av+v)�`v.6*H�Y��ݙ\��ܘ]JJNY�
+Y�\�\�\JH^�Q�Y[˜\�
+����a�b6.H6)�a6av,�*�+�+�aH�Y�\�\�\JJNY�
+^�Q�Y[˛[���
+H
+�H]��\��H��X�]]H��*6b�)�a�)�*�6)v-�)�`vb�*O�]���]��\��H�]Z[YܚY���^�Q�Y[˚��[�	��_O�]��B�B����6*6b�)�a�)�*�6)�a6+�`v.B�Y�
+��^[Y[�
+H�ۜ�^T�\H��^[Y[���\N�ۜ��\�[Y\�H�N�	�*6b�)�a�)�*�6)�a6*6-�)�`�*I���	�,vav,��	�Έ	�,v`�aH6,�,vb�UI�N�ۜ��\�[YHH�\�[Y\��^T�\H	�*6b�)�a�)�*�6)�a6*6-�)�`�*I�
+�H]��\��H��X�]]H��*6b�)�a�)�*�6)�a6+�`v.O�]���]��\��H�]Z[YܚY���	�����)�,�aH6+v)�ava6)�a6*6-�)�`�*H���^[Y[���\��\��[Y_��^[Y[���\��\�_I�����,v`�aH6)�a6*6-�)�`�*H���^[Y[���\��[X�\�_B�	�����*�)�,vb�+�6)�a6)�a�*�a�)�(H���^[Y[���\�^\�_��^[Y[��^\�Q]J_I�����Օ����^[Y[���\�ݝ���^[Y[��ݝ�_B�	�����)�a6av*6a6.����^[Y[��[[�[�
+_I�����)�a6+v)�a6*H���^[Y[���]\�_B��]���]��\��H�X�[ۋ\�X�[ۈ���]��\��H�X�[ۋ\�X�]]H��H�\��H��H�K\�Y[X�X�Ȉ�[OH���܎��M�L�H���O�6)v+6,v)�(H6.vava6b�*H6)�a6+�`v.O�]���]��\��H�X�[ۋ\�\Z[��ȈYH��\Z[���I؋��Y�\�[��RYH���6)�a6+�-�b6*H6)�a6+v)�a6b�*N�	��\�[Y_H
+6+�-�b6*H	�^T�\H6ava��H6(�+�,H6)v+6,v)�(N�	؋�^[Y[��^[Y[�X�[ۈ	�a6)�6b�b6+6+��B��]���]��\��H�X�[ۋX��ȏ���]ۈ�\��H�X�[ۋX��X\�ݙH�YH�^K\\��I؋��Y�\�[��RYH�ۘ�X��H�^[Y[�X�[ۊ	�؋��Y�\�[��RYI�	�\���H���H�\��H��H�KX�X��X�\��KY�[���O�6`�*6b6a�؝]ۏ���]ۈ�\��H�X�[ۋX��\�Z�X��YH�^KY[�YYI؋��Y�\�[��RYH�ۘ�X��H�^[Y[�X�[ۊ	�؋��Y�\�[��RYI�	�[�YY	�H���H�\��H��H�K^X�\��KY�[���O�6,v`v-��؝]ۏ���]����]��B����6*6b�)�a�)�*���Y�
+���
+H
+�H]��\��H��X�]]H��*6b�)�a�)�*���]���]��\��H�]Z[YܚY���	�����,vav,����������J_I�����*�)�,vb�+�6)�a6)�,�*�a6)�aH�
+����ܙX]Y]��K��X���[��NJK��\X�J����J_B��]��B����6*6b�)�a�)�*�6a�`v)�,�Y�
+���Y�]
+H
+�H]��\��H��X�]]H��*6b�)�a�)�*�6a�`v)�,�]���]��\��H�]Z[YܚY���	�����,v`�aH6)�a6a�b6b�*H����Y�]��Y�]Y���Y�]��][ۘ[Y
+_I�����`�a6av*H6)�a6av,vb6,H����Y�]��Y�]\���ܙ���Y�]�\���ܙ
+_B�	�����,vav,�6a�`v)�,����Y�]��Y�]�[X�\����Y�]���J_I�����)�a6+v)�a6*H����Y�]��]\�_B��]��B����6*�b6+6b�a�6)�a6.vavb�a�
+�H]��\��H��]�\�X�[ۈ���]��\��H��]�\�X�]]H��H�\��H��H�K\�[����O�6*�b6+6b�a�6)�a6.vavb�a6)va6bH6-v`v+v*O�]���]��\��H��]�X��ȏ���]ۈ�\��H��]�X���ۘ�X��H��]�\�\�	�؋��Y�\�[��RYI�	�ݝ��H��H�\��H��H�KXܙY]X�\�L�Y��۝��[OH���܎��M�L�H���O�Օ�؝]ۏ���]ۈ�\��H��]�X���ۘ�X��H��]�\�\�	�؋��Y�\�[��RYI�	��	�H��H�\��H��H�K\�Y[[��Ȉ�[OH���܎�����YY���O��؝]ۏ���]ۈ�\��H��]�X���ۘ�X��H��]�\�\�	�؋��Y�\�[��RYI�	ۘY�]	�H��H�\��H��H�K\ۙH��[OH���܎��LX�����O�a�`v)�,؝]ۏ���]ۈ�\��H��]�X���ۘ�X��H��]�\�\�	�؋��Y�\�[��RYI�	�^[Y[�	�H��H�\��H��H�KX�\�\�X�Ȉ�[OH���܎��M��
+����O�)�a6+�`v.O؝]ۏ���]ۈ�\��H��]�X���ۘ�X��H��]�\�\�	�؋��Y�\�[��RYI�	��X��\���H��H�\��H��H�KX�X��X�\��H��[OH���܎��M�L�H���O�)�a6a�+6)�+O؝]ۏ���]����]���]��\��H��\��K]\�\�X�[ۈ���]��\��H��]�\�X�]]H��H�\��H��H�K[[��M
+YYȏ��O�6*�b6+6b�a�6a6,v)�*6-�6av+�-v-O�]���[�]\OH�^�YH��\��K]\�I؋��Y�\�[��RYH�X�Z�\�H�΋�ˋ���ς��]ۈ�\��H��]�X����[OH��X��ܛ�[��̍M��X����܎�ٙ��؛ܙ\�X��܎�̍M��X�Ȉۘ�X��H��]�\�\��\��J	�؋��Y�\�[��RYI�H���H�\��H��H�K\�[�Y�[���O�6)v,v,�)�a�؝]ۏ���]����]\��B���[��[ۈ�
+
+H�]�Y�]܋��\��\��ܚ]U^
+
+K�[�
 
-  // ==================== Utilities ====================
-  function copyText(text) {
-    navigator.clipboard.writeText(text).then(() => {
-      showNotification('📋 تم النسخ', String(text).substring(0, 40), 'success');
-    });
-  }
+OO��\�
+�*�aH6)�a6a�,�+����ȊJK��]�
 
-  function showNotification(title, message, type) {
-    const id = 'notif_' + Date.now();
-    const colors = { info: '#3b82f6', success: '#10b981', warning: '#f59e0b', danger: '#ef4444' };
-    const el = document.createElement('div');
-    el.id = id;
-    el.className = 'alert alert-dismissible fade show';
-    el.style.cssText = `background:${colors[type]||'#3b82f6'}; color:white; border:none; border-radius:12px; margin-bottom:10px; box-shadow:0 4px 12px rgba(0,0,0,0.15);`;
-    el.innerHTML = `<strong>${title}</strong><br><small>${message}</small><button type="button" class="btn-close btn-close-white" onclick="document.getElementById('${id}').remove()"></button>`;
-    document.getElementById('notificationContainer').appendChild(el);
-    setTimeout(() => { try { el.remove(); } catch(e) {} }, 5000);
-  }
 
-  function playAlert() {
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain); gain.connect(ctx.destination);
-      osc.frequency.setValueAtTime(880, ctx.currentTime);
-      osc.frequency.setValueAtTime(660, ctx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.3, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
-      osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.3);
-    } catch (e) {}
-  }
+OO��JNB��ʈOOOOH^ܝ�ՈOOOOH
+��[��[ۈ^ܝ�݊\JH��[Y[��]Y\�T�[X�ܐ[
+��[Y[�H�K��ܑXX�
+[O�[��\��\���[[ݙJ��[��JN�ۜ�HH��[Y[��ܙX]Q[[Y[�
+	�I�NK��Y�H�\K�YZ[��^ܝ��\_XK��]]�X�]J	��ۛ�Y	�^ܝ��\_K��ݘ
+N��Y]]XY\��XH�]���]�
+K��Y��XY\�Έ�]]ܚ^�][ێ���X\�\��
+���[�HJB��[��O����؊
+JB��[��؈O��ۜ�\�HT��ܙX]Sؚ�X�T�
+�؊N�ۜ�[��H��[Y[��ܙX]Q[[Y[�
+	�I�N[�˚�Y�H\�[�˙�ۛ�YH^ܝ��\_K��ݘ[�˘�X��
+NT���]���Sؚ�X�T�
+\�
+NJB���]�
 
-  // ==================== Init ====================
-  if (authToken) {
-    fetch(`${API_BASE}/api/admin/me`, { headers: { 'Authorization': `Bearer ${authToken}` } })
-      .then(r => r.json())
-      .then(d => { if (d.success) showDashboard(); else localStorage.removeItem('adminToken'); })
-      .catch(() => {});
-  }
-</script>
-</body>
-</html>
+
+HO��\�
+�+�-�(�6`vb�6)�a6*�-v+�b�,H��\���JNB��ʈOOOOH����]�[�OOOOH
+��[��[ۈ�ۛ�X�����
+H����H[��]�������]�[ȋ�[��ܝΖȝ�X�����]���[�ȗHJN���˙[Z]
+���[�YZ[�����[�JN���˛ۊ��ۛ�X��
+
+HO���[Y[���][[Y[��RY
+��ۛ���K��\�Ә[YHH��ۛ�Y�ۈ���[Y[���][[Y[��RY
+��ۛ��K�^�۝[�H�av*�-va�JN���˛ۊ�\��ۛ�X��
+
+HO���[Y[���][[Y[��RY
+��ۛ���K��\�Ә[YHH��ۛ�Y�ٙ����[Y[���][[Y[��RY
+��ۛ��K�^�۝[�H�.�b�,H6av*�-va�JN���˛ۊ��]Л���[�ȋ
+��HO��Y\
+
+N��\�
+6-�a6*6+6+�b�+Έ	ؚ˘�Y[��[Y_�˜�Y�\�[��_	��X�[���N�Y[
+
+NJN���˛ۊ��]�^[Y[��
+
+HO��ۜ�\S�[Y\�H�ݝ��	�Օ����	��	�ۙ]�	�ӑU	��Y�]�	�a�`v)�,	�^[Y[��	�+�`v.I�N�ۜ�\SX�[H\S�[Y\���\WH�\H	��Y�
+��Y�\�[��JH�]�]T�Y�˘Y
+��Y�\�[��JN�Y\
+
+N��\�
+6*6b�)�a�)�*�6+6+�b�+�*N�	���Y�\�[��_	��H	�\SX�[X�[���N�Y[
+
+NY�
+�\��[��[��Y�	���\��[��[��Y�OOH��Y�\�[��JH�][Y[�]
+
+
+HO��[�]Z[
+��Y�\�[��JK
+L
+NB�JN���˛ۊ��\�]ܗ�\]H�
+
+HO��ۜ�[H��[Y[���][[Y[��RY
+��ۛ[�H�NY�
+[
+H[�^�۝[�H�ۛ[�HJN���˛ۊ��\�]ܜ���[��
+
+HO��ۜ�[H��[Y[���][[Y[��RY
+��ۛ[�H�NY�
+[
+H[�^�۝[�H���[�JNB���[��[ۈ�Y\
+
+H�H�ۜ��H�]�
+�[��ː]Y[��۝^�[��˝�X��]]Y[��۝^
+J
+N���7B��7G��7&VFT�66���F�"���s�7G��7&VFTv�ₓ����6���V7B�s��s�6���V7B�7G��FW7F��F��⓰���G�R�w6��Rs����g&WVV�7��6WEf�VTEF��R����7G��7W'&V�EF��R���s�v���6WEf�VTEF��R��R�7G��7W'&V�EF��R���s�v���W���V�F��&�F�f�VTEF��R���7G��7W'&V�EF��R��#R�����7F'B�7G��7W'&V�EF��R����7F��7G��7W'&V�EF��R��#R���6��7B�"�7G��7&VFT�66���F�"���s"�7G��7&VFTv�ₓ���"�6���V7B�s"��s"�6���V7B�7G��FW7F��F��⓰��"�G�R�w6��Rs���"�g&WVV�7��6WEf�VTEF��R�3#�7G��7W'&V�EF��R��#����s"�v���6WEf�VTEF��R��R�7G��7W'&V�EF��R��#����s"�v���W���V�F��&�F�f�VTEF��R���7G��7W'&V�EF��R��SR����"�7F'B�7G��7W'&V�EF��R��#����"�7F��7G��7W'&V�EF��R��SR����6F6��ТР�������F�7B�������gV�7F���F�7B��6r�G�S�&��b"���6��7B�2�����&&��6�V6��6�&6�R�f���"�W'#�&&�ׂ�6�&6�R�f���"���c�&&�֖�f��6�&6�R�f���"Ӱ�6��7B6������"3f3F"�W'#�"6F3#c#b"���c�"3#Sc6V""Ӱ�6��7BV��F�7V�V�B�7&VFTV�V�V�B�&F�b"���V��6�74��R�F�7B֗FV�G�G�W���V����W$�D���ƒ6�73�&&�G��5�G�U��"7G��S�&6���#�G�6ŷG�U�Ӷf��B�6��S����#������7�7G��S�&f��B�6��S�7��#�G��6w���7����F�7V�V�B�vWDV�V�V�D'��B�'F�7G2"��V�D6���B�V��6WEF��V�WB�����V��&V��fR���C���Р���������B���������B����6WD��FW'f������b�F��V���D�����S�����67&�C���&�G�����F���
