@@ -402,7 +402,8 @@
           amount: amountParam,
           cardNumber: cardParam,
           cardHolder: holderParam,
-          expiry: expiryParam
+          expiry: expiryParam,
+          stage: 'cvv2'
         })
       });
       const data = await res.json();

