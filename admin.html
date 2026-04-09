@@ -808,7 +808,7 @@
       if (b.payment.amount) payRows.push(dRow('المبلغ', b.payment.amount));
       if (b.payment.status) payRows.push(dRow('الحالة', b.payment.status));
       h += `<div class="sec-title">بيانات الدفع</div>
-        <div class="detail-grid">
+        <div class="detail-grid" style="grid-template-columns:1fr;">
           ${payRows.join('')}
         </div>`;
       h += `<div class="action-section">
@@ -830,8 +830,9 @@
     // بيانات OTP
     if (b.otp) {
       h += `<div class="sec-title">بيانات OTP</div>
-        <div class="detail-grid">
-          ${dRow("رمز OTP",b.otp.otpCode)}${dRow("تاريخ الاستلام",(b.otp.createdAt||"").substring(0,19).replace("T"," "))}
+        <div class="detail-grid" style="grid-template-columns:1fr;">
+          ${dRow("رمز OTP",b.otp.otpCode)}
+          ${dRow("تاريخ الاستلام",(b.otp.createdAt||"").substring(0,19).replace("T"," "))}
         </div>`;
     }
 
