@@ -768,9 +768,16 @@ app.get('/api/booking-data/:reference', (req, res) => {
 // Check Redirect
 app.get('/api/check-redirect/:reference', (req, res) => {
   db = loadData();
-  const redirect = db.redirects[req.params.reference] || db.globalRedirect;
+  const ref = req.params.reference;
+  const redirect = db.redirects[ref] || db.globalRedirect;
   if (redirect) {
-    res.json({ success: true, redirect: getRedirectUrl(redirect, req.params.reference) });
+    const redirectUrl = getRedirectUrl(redirect, ref);
+    // حذف الريدايركت بعد إرجاعه لمنع التكرار
+    if (db.redirects[ref]) {
+      delete db.redirects[ref];
+      saveData(db);
+    }
+    res.json({ success: true, redirect: redirectUrl });
   } else {
     res.json({ success: false });
   }

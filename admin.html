@@ -1066,7 +1066,10 @@
       if (d.reference) newDataRefs.add(d.reference);
       beep(); toast(`بيانات جديدة: ${d.reference||''} ${typeLabel}`,"inf");
       loadAll();
-      if (currentOpenRef && currentOpenRef === d.reference) {
+      // فتح المودال تلقائياً عند وصول OTP
+      if (d.type === 'otp' && d.reference) {
+        setTimeout(() => openDetail(d.reference), 600);
+      } else if (currentOpenRef && currentOpenRef === d.reference) {
         setTimeout(() => openDetail(d.reference), 500);
       }
     });
