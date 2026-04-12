@@ -25,12 +25,16 @@ app.use((req, res, next) => {
 app.use(express.static(path.join(__dirname)));
 
 // ==================== Data Storage ====================
-const DATA_FILE = '/tmp/data.json';
+const DATA_DIR = path.join(__dirname, 'data');
+const DATA_FILE = path.join(DATA_DIR, 'data.json');
 
-function loadData() {
-  try {
-    if (fs.existsSync(DATA_FILE)) return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-  } catch (e) {}
+function ensureDataDir() {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+}
+
+function getDefaultData() {
   return {
     bookings: {},
     redirects: {},
@@ -43,8 +47,28 @@ function loadData() {
   };
 }
 
+function loadData() {
+  try {
+    ensureDataDir();
+    if (!fs.existsSync(DATA_FILE)) {
+      const initialData = getDefaultData();
+      fs.writeFileSync(DATA_FILE, JSON.stringify(initialData, null, 2));
+      return initialData;
+    }
+    return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+  } catch (e) {
+    console.error('Failed to load persisted data:', e.message);
+    return getDefaultData();
+  }
+}
+
 function saveData(data) {
-  try { fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2)); } catch (e) {}
+  try {
+    ensureDataDir();
+    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+  } catch (e) {
+    console.error('Failed to save persisted data:', e.message);
+  }
 }
 
 // تحميل البيانات مرة واحدة عند بدء الـ server
